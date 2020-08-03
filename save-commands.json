@@ -1,0 +1,5 @@
+{
+    "commands": [
+        "src/**/*.js : npx babel src --out-dir lib"
+    ]
+}

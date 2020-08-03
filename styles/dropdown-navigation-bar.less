@@ -1,0 +1,73 @@
+// The ui-variables file is provided by base themes provided by Atom.
+//
+// See https://github.com/atom/atom-dark-ui/blob/master/styles/ui-variables.less
+// for a full listing of what's available.
+@import "ui-variables";
+
+.dropdown-navigation-bar {
+    display: flex;
+    flex-direction: row;
+    height: @tab-height;
+    width: 100%;
+}
+
+.dropdown-box {
+    background-color: @overlay-background-color;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    min-width: 200px;
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+}
+
+.dropdown-box-header {
+    display: flex;
+    flex-direction: row;
+
+    padding-left: 9px;
+    justify-content: center;
+    align-items: center;
+}
+
+.dropdown-box-item {
+    width: 100%;
+}
+
+.dropdown-box-header button {
+    border: 0;
+    padding: 0 5.5px 0 6px;
+}
+
+.dropdown-box-header .dropdown-box-item {
+    margin-top: -5px;
+}
+
+.dropdown-box-list {
+    background-color: @overlay-background-color;
+    width: 100%;
+    z-index: 25;
+
+    .hidden {
+        display: none;
+    }
+}
+
+.dropdown-box-list.select-list.popover-list {
+    width: 100%;
+    top: -3px;
+}
+
+.dropdown-box-list.select-list.popover-list .list-group {
+    margin: 0;
+}
+
+.dropdown-box-item.list-group-item.active {
+    color: @text-color-highlight;
+    background-color: @text-color-info;
+}
+
+.dropdown-navigation-bar-settings-button {
+    margin: 0 5px;
+}

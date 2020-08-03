@@ -1,0 +1,62 @@
+{
+    "name": "dropdown-navigation-bar",
+    "main": "./lib/main",
+    "version": "0.1.0",
+    "description": "Adds navigation bar empowered with two brand new dropdown boxes capable of displaying class names, property names or really any name you have! Well, if someone have done the work to give the names to the navigation bar... Javascript included!",
+    "keywords": [
+        "ui",
+        "navigation bar",
+        "drop down box",
+        "class name",
+        "hint",
+        "help"
+    ],
+    "activationCommands": {
+        "atom-workspace": "dropdown-navigation-bar:toggle"
+    },
+    "viewProviders": [
+        "navigationBarViewProvider"
+    ],
+    "deserializers": {
+        "dropdown-navigation-bar/NavigationBarPackage": "deserializeNavigationBarPackage"
+    },
+    "repository": "https://github.com/EnterTheNameHere/dropdown-navigation-bar.git",
+    "license": "MIT",
+    "engines": {
+        "atom": ">=1.0.0 <2.0.0"
+    },
+    "consumedServices": {
+        "busy-signal": {
+            "versions": {
+                "1.0.0": "consumeSignal"
+            }
+        }
+    },
+    "scripts": {
+        "build": "babel src --out-dir lib",
+        "docs": "esdoc"
+    },
+    "dependencies": {
+        "@babel/parser": "^7.10.4",
+        "etch": "^0.14.0"
+    },
+    "devDependencies": {
+        "@babel/cli": "^7.10.4",
+        "@babel/core": "^7.10.4",
+        "@babel/preset-env": "^7.10.4",
+        "@babel/register": "^7.10.4",
+        "babel-eslint": "^10.1.0",
+        "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+        "cheerio": "^1.0.0-rc.3",
+        "esdoc": "^1.1.0",
+        "esdoc-ecmascript-proposal-plugin": "^1.0.0",
+        "esdoc-standard-plugin": "^1.0.0",
+        "eslint": "^7.4.0",
+        "eslint-plugin-babel": "^5.3.1",
+        "eslint-plugin-brace-rules": "^0.1.6",
+        "eslint-plugin-compat": "^3.8.0",
+        "eslint-plugin-import": "^2.22.0",
+        "eslint-plugin-promise": "^4.2.1",
+        "eslint-plugin-security": "^1.4.0"
+    }
+}

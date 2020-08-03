@@ -1,0 +1,27 @@
+{
+    "ecmaVersion": "8",
+    "libs": [
+        "browser",
+        "react"
+    ],
+    "loadEagerly": [
+        "src/*.*"
+    ],
+    "dontLoad": [
+        "node_modules/**"
+    ],
+    "plugins": {
+        "doc_comment": true,
+        "complete_strings": {
+            "maxLength": 15
+        },
+        "node": {},
+        "node_resolve": {},
+        "es_modules": {},
+        "modules": {
+            "dontLoad": "",
+            "load": "",
+            "modules": ""
+        }
+    }
+}

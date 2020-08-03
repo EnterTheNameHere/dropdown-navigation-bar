@@ -1,0 +1,12 @@
+{
+    "menu": [{
+        "label": "Packages",
+        "submenu": [{
+            "label": "dropdown-navigation-bar",
+            "submenu": [{
+                "label": "Toggle",
+                "command": "dropdown-navigation-bar:toggle"
+            }]
+        }]
+    }]
+}
