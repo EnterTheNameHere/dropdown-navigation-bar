@@ -99,7 +99,10 @@ export class IdentifiersProvider {
             return null;
         }
 
-        return [ new EmptyIdentifier(identifier), ...identifier.getChildren() ];
+        const children = identifier.getChildren().filter( (child) => {
+            return !child.canHaveChildren();
+        });
+        return [ new EmptyIdentifier(identifier), ...children ];
     }
 }
 
