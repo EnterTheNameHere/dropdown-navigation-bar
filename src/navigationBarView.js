@@ -3,6 +3,7 @@
 import { CompositeDisposable } from 'atom'; // eslint-disable-line import/no-unresolved
 import { DropdownBoxView } from './dropdownBoxView';
 import { DropdownBoxSettingsButtonView } from './dropdownBoxSettingsButtonView';
+import { Identifier } from './identifier';
 
 const etch = require('etch');
 const $ = etch.dom;
@@ -108,15 +109,26 @@ export class NavigationBarView {
             childrenSelectedIndex = 0;
         }
 
+        const renderItem = ( item ) => {
+            if( item instanceof Identifier ) {
+                return [
+                    item.getKind().join(' '),
+                    item.getName()
+                ].join(' ');
+            }
+
+            return '';
+        };
+
         this.refs.leftDropbox.update({
             items: parentIdentifiers,
             selectedIndex: parentSelectedIndex,
-            itemRenderer: (item) => item.getDisplayName(),
+            itemRenderer: renderItem,
         });
         this.refs.rightDropbox.update({
             items: childrenIdentifiers,
             selectedIndex: childrenSelectedIndex,
-            itemRenderer: (item) => item.getDisplayName(),
+            itemRenderer: renderItem,
         });
     }
 
