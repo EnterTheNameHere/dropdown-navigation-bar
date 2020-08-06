@@ -82,12 +82,6 @@ export class Identifier {
     _scopeLevel = 0;
 
     /**
-     * The boolean representing whether this Identifier can have children.
-     * @type {boolean}
-     */
-    _canHaveChildren = true;
-
-    /**
      * Holds unique ID for this Identifier.
      * @type {string}
      *
@@ -99,7 +93,6 @@ export class Identifier {
      * Creates new Identifier from given options object.
      * @param {Object}          options
      * @param {TextEditor}      options.textEditor      Required: TextEditor instance where the Identifier can be found.
-     * @param {boolean}         options.canHaveChildren Required: Boolean indicating whether Identifier can have children.
      * @param {Point}           [options.startPosition] Point where identifier starts in TextEditor
      * @param {Point}           [options.endPosition]   Point where identifier ends in TextEditor
      * @param {Identifier|null} [options.parent]        Identifier's parent, if it's a member of any, or null
@@ -112,7 +105,6 @@ export class Identifier {
         //console.log(options);
         if( !options ) throw Error('Identifier\'s constructor is expecting an options object as an argument.');
         if( !options.textEditor ) throw Error('Identifier\'s construction options must have "textEditor" property set to an instance of TextEditor where the Identifier can be found.');
-        if( !options.canHaveChildren === null || !options.canHaveChildren === undefined ) throw Error('Identifier\'s construction options must have "canHaveChildren" property set to true or false.');
 
         if( !options.startPosition ) options.startPosition = null;
         if( !options.endPosition ) options.endPosition = null;
@@ -122,7 +114,6 @@ export class Identifier {
         if( !options.kind && !Array.isArray( options.kind ) ) options.kind = new Array();
 
         this._textEditor = options.textEditor;
-        this._canHaveChildren = options.canHaveChildren;
         this._startPosition = options.startPosition;
         this._endPosition = options.endPosition;
         this._parent = options.parent;
@@ -170,7 +161,7 @@ export class Identifier {
     }
 
     /**
-     * Sets startPosition
+     * Sets Identifier's starting position to `position`. Refers to where Identifier starts in TextEditor.
      * @param {Point} position
      * @return {Identifier} Returns itself.
      */
@@ -188,7 +179,7 @@ export class Identifier {
     }
 
     /**
-     * Sets endPosition.
+     * Sets Identifier's ending position to `position`. Refers to where Identifier ends in TextEditor.
      * @param {Point} position
      * @return {Identifier} Returns itself.
      */
@@ -224,7 +215,7 @@ export class Identifier {
     }
 
     /**
-     * Sets name to given string.
+     * Sets `name` to given string.
      * @param {string} name
      * @return {Identifier} Returns itself.
      */
@@ -242,7 +233,7 @@ export class Identifier {
     }
 
     /**
-     * Adds key to kind array. If key already exists in kind array, it won't add it twice.
+     * Adds `key` to kind array. If `key` already exists in kind array, it won't be added twice.
      * @param {string} key String to add to kind array.
      * @return {Identifier} Returns itself.
      */
@@ -254,7 +245,16 @@ export class Identifier {
     }
 
     /**
-     * Removes key from kind array. If key doesn't exist in array, it does nothing.
+     * Returns true if Identifier is of `key` kind. (class, function, member, const etc.)
+     * @param  {string}  key String kind to check if Identifier is.
+     * @return {Boolean}     True if Identifier is of given kind, false if it is not.
+     */
+    isKind( key ) {
+        return this._kind.includes( key );
+    }
+
+    /**
+     * Removes `key` from kind array. If key doesn't exist in array, it does nothing.
      * @param {string} key String to remove from kind array.
      * @return {Identifier} Returns itself.
      */
@@ -270,27 +270,15 @@ export class Identifier {
     }
 
     /**
-     * Returns true if Identifier can have children, false if it cannot.
-     * @return {Boolean}
-     */
-    canHaveChildren() {
-        return this._canHaveChildren;
-    }
-
-    /**
-     * Adds child to Identifier.
+     * Adds `child` to Identifier.
      * @param {Identifier} child
      * @return {Identifier} Returns itself.
      *
      * @throws {Error} Given child argument is not valid.
-     * @throws {Error} when Identifier cannot have children. Check {@link Identifier#canHaveChildren} first.
      */
     addChild( child ) {
-        if( !child ) {
+        if( child === null || child === undefined ) {
             throw new Error('"child" argument is not valid. Instance of Identifier is expected.');
-        }
-        if( !this.canHaveChildren() ) {
-            throw new Error('Identifier cannot have children.');
         }
 
         this._children.push( child );
@@ -322,57 +310,47 @@ export class Identifier {
     }
 
     /**
-     * Returns child Identifier based on given index, ie. number in sequence of insertion.
-     * Helper for manual iteration. Returns null if Identifier cannot have children.
+     * Returns child Identifier based on given `index`, ie. number in sequence of insertion.
+     * Helper for manual iteration.
      * @param  {number} index - index of child Identifier
      * @return {Identifier|null} - returns null if child with given index is not found in children.
      */
     getChildByIndex( index ) {
-        if( !this.canHaveChildren() ) return null;
-
         if( typeof index === 'number' ) {
-            if( index >= 0 ) {
+            if( index >= 0 && index < this.getNumOfChildren() ) {
                 // Trying to make sure index is numeric to be sure, but who knows...
-                const child = this._children[index]; // eslint-disable-line security/detect-object-injection
-                if( child instanceof Identifier ) {
-                    return child;
-                }
+                return this._children[index]; // eslint-disable-line security/detect-object-injection
             }
         }
         return null;
     }
 
     /**
-     * Returns children of this Identifier or null, if Identifier cannot have children.
-     * @return {Array<Identifier>|null}
+     * Returns children of this Identifier.
+     * @return {Array<Identifier>}
      */
     getChildren() {
-        if( !this.canHaveChildren() ) return null;
-
         return this._children;
     }
 
     /**
-     * Returns true if Identifier has one or more children or false if none or
-     * if Identifier cannot have children.
+     * Returns true if Identifier has one or more children.
      * @return {Boolean} true or false
      */
     hasChildren() {
-        if( !this.canHaveChildren() ) return false;
         return this._children.length > 0;
     }
 
     /**
-     * Returns number of children. Returns zero (0) if Identifier cannot have children.
+     * Returns number of children.
      * @return {number}
      */
     getNumOfChildren() {
-        if( !this.canHaveChildren() ) return 0;
         return this._children.length;
     }
 
     /**
-     * Returns the level of scope nesting of this Identifier. 0 is global scope itself, 1 are identifiers in file scope.
+     * Returns the level of scope nesting of this Identifier. 0 is the file scope.
      * @return {number}
      */
     getScopeLevel() {
@@ -386,5 +364,15 @@ export class Identifier {
      */
     getDisplayName() {
         return this._name;
+    }
+
+    /**
+     * Returns true if both Identifiers are equal, that is they both have same ID.
+     * @param  {Identifier} first
+     * @param  {Identifier} second
+     * @return {boolean}    true if both Identifiers are equal, false if not.
+     */
+    static areEqual( first, second ) {
+        return first.getID() === second.getID();
     }
 }
