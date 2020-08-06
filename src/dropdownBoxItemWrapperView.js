@@ -105,11 +105,11 @@ export class DropdownBoxItemWrapperView {
             // eg. mouseover: () => {}
 
             // Let get all properties in eventHandlers object.
-            for( const property in this.currentEventHandlers ) {
+            for( const property in this._currentEventHandlers ) {
                 // We don't want prototype chain properties, only user defined.
                 if( Object.prototype.hasOwnProperty.call( this._currentEventHandlers, property ) ) {
                     // Handler should be function...
-                    const handler = this.currentEventHandlers[property];
+                    const handler = this._currentEventHandlers[property];
                     if( typeof(handler) === 'function' ) {
                         this.element.addEventListener( property, handler );
                     }
