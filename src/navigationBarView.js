@@ -33,7 +33,7 @@ export class NavigationBarView {
     }
 
     updateDropdownBoxes() {
-        console.log('NavigationBarView::updateDropdownBoxes');
+        //console.log('NavigationBarView::updateDropdownBoxes');
 
         let parentIdentifiers = null;
         let childrenIdentifiers = null;

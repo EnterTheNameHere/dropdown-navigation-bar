@@ -170,7 +170,7 @@ export class NavigationBar {
 
     observeActiveTextEditor() {
         this.subscriptions.add( atom.workspace.observeActiveTextEditor( (textEditor) => {
-            console.log('NavigationBar::observeActiveTextEditor', textEditor);
+            //console.log('NavigationBar::observeActiveTextEditor', textEditor);
             if( textEditor === undefined ) { // No TextEditor is curretly active
                 this.activeEditor = null;
                 this.activeEditorSubscriptions.dispose();
@@ -194,7 +194,7 @@ export class NavigationBar {
     }
 
     setSelectedIdentifier( selectedIdentifier ) {
-        console.log('NavigationBar::setSelectedIdentifier', selectedIdentifier);
+        //console.log('NavigationBar::setSelectedIdentifier', selectedIdentifier);
 
         this._selectedIdentifier = selectedIdentifier;
         this.emitter.emit( 'did-change-selected-identifier' );
