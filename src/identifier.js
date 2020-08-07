@@ -74,6 +74,12 @@ export class Identifier {
     _children = new Array();
 
     /**
+     * Holds additional data which cannot fit any other property.
+     * @type {Map<string,string>}
+     */
+    _additionalData = new Map();
+
+    /**
      * Holds the level of scope nesting of this Identifier. 0 are identifiers in top scope - eg. file scope.
      * @type {number}
      *
@@ -364,6 +370,14 @@ export class Identifier {
      */
     getDisplayName() {
         return this._name;
+    }
+
+    /**
+     * Returns Map for storing additional data which doesn't fit elsewhere.
+     * @return {Map<string,string>} The Map.
+     */
+    getAdditionalDataMap() {
+        return this._additionalData;
     }
 
     /**
