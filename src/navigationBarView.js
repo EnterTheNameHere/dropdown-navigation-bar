@@ -88,7 +88,7 @@ export class NavigationBarView {
 
                 // And we need to find child's index too...
                 index = childrenIdentifiers.findIndex( (identifier) => {
-                    return identifier.getID() === selectedIdentifier.getID();
+                    return Identifier.areEqual( selectedIdentifier, identifier );
                 });
 
                 if( index !== -1 ) {
@@ -112,8 +112,9 @@ export class NavigationBarView {
         const renderItem = ( item ) => {
             if( item instanceof Identifier ) {
                 return [
-                    item.getKind().join(' '),
-                    item.getName()
+                    item.getKind().map( (kind) => `[${kind}]` ).join(' '),
+                    item.getName(),
+                    Array.from( item.getAdditionalDataMap() ).map( (value) => `[${value[0]},${value[1]}]` ).join(' ')
                 ].join(' ');
             }
 
