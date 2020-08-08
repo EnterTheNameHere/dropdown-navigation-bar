@@ -111,10 +111,25 @@ export class NavigationBarView {
 
         const renderItem = ( item ) => {
             if( item instanceof Identifier ) {
+                let name = '';
+                if( item.isKind('multiple') ) {
+                    const children = item.getChildren().map( (child) => {
+                        const kinds = child.getKind().map( (kind) => `[${kind}]` ).join(' ');
+                        const additionals = Array.from( child.getAdditionalDataMap() ).map( (value) => {
+                            return `{${value[0]}=${value[1]}}`;
+                        } ).join(' ');
+                        const childName = child.getName();
+                        return ( kinds ? `${kinds} ` : '' ) + childName + ( additionals ? ` ${additionals}` : '' );
+                    });
+
+                    name = children.join(' ');
+                } else {
+                    name = item.getName();
+                }
                 return [
                     item.getKind().map( (kind) => `[${kind}]` ).join(' '),
-                    item.getName(),
-                    Array.from( item.getAdditionalDataMap() ).map( (value) => `[${value[0]},${value[1]}]` ).join(' ')
+                    name,
+                    Array.from( item.getAdditionalDataMap() ).map( (value) => `{${value[0]}=${value[1]}}` ).join(' ')
                 ].join(' ');
             }
 
