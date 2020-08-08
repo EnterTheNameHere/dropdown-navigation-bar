@@ -1,0 +1,2 @@
+
+import defaultExport from 'module';
