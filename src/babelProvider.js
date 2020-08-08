@@ -62,47 +62,40 @@ export class IdentifiersProvider {
     }
 
     /**
-     * Returns an array of all Identifiers which can have children
-     * (classes, namespaces, enums etc.) found in TextEditor, with
-     * TopScopeIdentifier at the top. TopScopeIdentifier is always
-     * present in the array, even if Provider is not able to provide
+     * Returns an array of all Identifiers of given `identifier` which
+     * can have children (eg. classes, namespaces, enums etc.), with
+     * TopScopeIdentifier at the top. TopScopeIdentifier must always
+     * be present in the array, even if Provider is not able to provide
      * any other Identifiers.
      *
-     * @return {Array<Identifier>} An array with all parent Identifiers.
+     * @param  {Identifier} [identifier] The parent Identifier we're getting children of. TopScopeIdentifier is default.
+     * @return {Array<Identifier>} An array with all parent Identifiers with TopScopeIdentifier on top.
+     * @abstract
+     * You want to override this function when creating custom IdentifiersProvider.
+     * Return Identifiers which belongs to the left dropdown box of NavigationBar - all the parents.
      */
-    getIdentifiersForParentsDropbox() {
-        const parents = this._topScopeIdentifier.getChildren().filter( (identifier) => {
-            return identifier.canHaveChildren();
-        });
-        return [ this._topScopeIdentifier, ...parents ];
+    getIdentifiersForParentsDropbox( identifier ) { // eslint-disable-line no-unused-vars
+        return [ this._topScopeIdentifier ];
     }
 
     /**
-     * Returns an array of all children of given parent `identifier`,
-     * with {@link EmptyIdentifier} at the top. {@link EmptyIdentifier}
-     * is always present in the array even if `identifier` otherwise
-     * have no other children.
+     * Returns an array of all children (eg. variables, properties, methods etc.)
+     * of the given parent `identifier`, with {@link EmptyIdentifier} at the top.
+     * {@link EmptyIdentifier} must always be present in the array even if `identifier`
+     * itself have no other children.
      *
-     * Returns **null** if `identifier` cannot have children, ie. is
-     * child of some parent itself...
-     *
-     * @param  {Identifier} identifier  The parent Identifier we're getting children of.
-     * @return {Array<Identifier>|null} Returns null if identifier cannot have children.
+     * @param  {Identifier} [identifier] The parent Identifier we're getting children of. TopScopeIdentifier is default.
+     * @return {Array<Identifier>}
+     * @abstract
+     * You want to override this function when creating custom IdentifiersProvider.
+     * Return Identifiers which belongs to the right dropdown box of NavigationBar - all the children.
      */
     getIdentifiersForChildrenDropbox( identifier ) {
-        if( !identifier ) {
-            throw new Error('identifier argument muse be valid instance of Identifier!');
+        if( identifier === null || identifier === undefined ) {
+            identifier = this._topScopeIdentifier;
         }
 
-        // Must be parent to have children...
-        if( !identifier.canHaveChildren() ) {
-            return null;
-        }
-
-        const children = identifier.getChildren().filter( (child) => {
-            return !child.canHaveChildren();
-        });
-        return [ new EmptyIdentifier(identifier), ...children ];
+        return [ new EmptyIdentifier(identifier), ...identifier.getChildren() ];
     }
 }
 
@@ -141,6 +134,50 @@ export class BabelProvider extends IdentifiersProvider {
             'BabelProvider finished',
             this._topScopeIdentifier
         );
+    }
+
+    /**
+     * @override
+     */
+    getIdentifiersForParentsDropbox( identifier ) {
+        if( identifier === null || identifier === undefined ) {
+            identifier = this._topScopeIdentifier;
+        }
+
+        return [
+            this._topScopeIdentifier,
+            ...identifier.getChildren().filter( (ident) => {
+                if( ident.isKind('class') ) {
+                    return true;
+                }
+                return false;
+            })
+        ];
+    }
+
+    /**
+     * @override
+     */
+    getIdentifiersForChildrenDropbox( identifier ) {
+        if( identifier === null || identifier === undefined ) {
+            identifier = this._topScopeIdentifier;
+        }
+
+        return [
+            new EmptyIdentifier( identifier ),
+            ...identifier.getChildren().filter( (ident) => {
+                if( ident.isKind('variable')
+                    || ident.isKind('function')
+                    || ident.isKind('method')
+                    || ident.isKind('property')
+                    || ident.isKind('unimplemented')
+                    || ident.isKind('export all')
+                ) {
+                    return true;
+                }
+                return false;
+            })
+        ];
     }
 
     /**
@@ -195,60 +232,13 @@ export class BabelProvider extends IdentifiersProvider {
     processEsTree() {
         if( !this._esTree ) return;
 
-        this._currentEsTreeNode = this._esTree;
-        this._currentIdentifier = this._topScopeIdentifier;
-
-        this.processCurrentNode();
-    }
-
-    /**
-     * Processes current EsTree node, if any is available for processing.
-     *
-     * @private
-     */
-    processCurrentNode() {
-        while( this._currentEsTreeNode ) {
-
-            switch( this._currentEsTreeNode.type ) {
-            case 'File':
-                this.consumeFile();
-                break;
-            case 'Program':
-                this.consumeProgram();
-                break;
-            case 'VariableDeclaration':
-                this.consumeVariableDeclaration();
-                break;
-            case 'ClassDeclaration':
-                this.consumeClassDeclaration();
-                break;
-            case 'FunctionDeclaration':
-                this.consumeFunctionDeclaration();
-                break;
-            case 'ExpressionStatement':
-                this.consumeExpressionStatement();
-                break;
-            case 'ImportDeclaration':
-                this.consumeImportDeclaration();
-                break;
-            case 'ExportNamedDeclaration':
-                this.consumeExportNamedDeclaration();
-                break;
-            case 'ExportDefaultDeclaration':
-                this.consumeExportDefaultDeclaration();
-                break;
-                // Following node types are skipped from processing for identifiers.
-                // Fallthrough intential
-            case 'ForOfStatement':
-            case 'ForInStatement':
-                this._currentEsTreeNode = null;
-                break;
-            default:
-                console.warn( 'BabelProvider::processNode: Unknown node type!', this._currentEsTreeNode.type );
-                console.info( this._currentEsTreeNode );
-                this._currentEsTreeNode = null;
-            }
-
+        switch( this._esTree.type ) {
+        case 'File':
+            this.processFile( this._esTree, this._topScopeIdentifier );
+            break;
+        default:
+            console.warn( 'BabelProvider::processEsTree: Unknown node type!', this._esTree.type );
+            console.info( this._esTree );
         }
     }
 
@@ -262,9 +252,10 @@ export class BabelProvider extends IdentifiersProvider {
         .start      {number}
         .type       'File'
      */
-    consumeFile() {
-        // Nothing to add yet...
-        this._currentEsTreeNode = this._currentEsTreeNode.program;
+    processFile( node, parentIdentifier/*, currentIdentifier*/ ) {
+        console.assert( node.type === 'File', 'Wrong node type!' );
+
+        this.processProgram( node.program, parentIdentifier );
     }
 
     /*
@@ -281,21 +272,162 @@ export class BabelProvider extends IdentifiersProvider {
         .end            {number}
         .interpreter    {null}
         .loc            SourceLocation{start:{line,column}, end:{line,column}, source: string|null}
-        .sourceType     ['module','script']
+        .sourceType     {string}
         .start          {number}
         .type           'Program'
      */
-    consumeProgram() {
-        // Nothing to add yet...
-        for( const node of this._currentEsTreeNode.body ) {
-            this._currentEsTreeNode = node;
-            this.processCurrentNode();
+    processProgram( node, parentIdentifier/*, currentIdentifier*/ ) {
+        console.assert( node.type === 'Program', 'Wrong node type!' );
+
+        for( const body of node.body ) {
+            if( !this.processStatement( body, parentIdentifier ) ) {
+                if( !this.processModuleDeclaration( body, parentIdentifier ) ) {
+                    console.warn( 'BabelProvider::processProgram: Unknown program.body.type!', body.type );
+                    console.info( 'Program', node );
+                    console.info( 'esTree:', this._esTree );
+                }
+            }
         }
     }
 
-    consumeExportDefaultDeclaration() {
-        console.info( 'TODO: implement ExportDefaultDeclaration' );
-        this._currentEsTreeNode = null;
+    /*
+        ModuleDeclaration: ExportAllDeclaration
+            | ExportDefaultDeclaration
+            | ExportNamedDeclaration
+            | ImportDeclaration;
+     */
+    processModuleDeclaration( node, parentIdentifier/*, currentIdentifier*/ ) {
+        switch( node.type ) {
+        case 'ExportAllDeclaration':
+            this.processExportAllDeclaration( node, parentIdentifier );
+            break;
+        case 'ExportDefaultDeclaration':
+            this.processExportDefaultDeclaration( node, parentIdentifier );
+            break;
+        case 'ExportNamedDeclaration':
+            this.processExportNamedDeclaration( node, parentIdentifier );
+            break;
+        case 'ImportDeclaration':
+            this.processImportDeclaration( node, parentIdentifier );
+            break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    /*
+        Statement: BlockStatement( FunctionBody )
+            | BreakStatement
+            | ContinueStatement
+            | DebuggerStatement
+            | Declaration( ClassDeclaration | FunctionDeclaration | VariableDeclaration )
+            | DoWhileStatement
+            | EmptyStatement
+            | ExpressionStatement
+            | ForInStatement
+            | ForOfStatement
+            | ForStatement
+            | IfStatement
+            | LabeledStatement
+            | ReturnStatement
+            | SwitchStatement
+            | ThrowStatement
+            | TryStatement
+            | WhileStatement
+            | WithStatement;
+     */
+    processStatement( node, parentIdentifier/*, currentIdentifier*/ ) {
+        if( this.processDeclaration( node, parentIdentifier ) ) {
+            return true;
+        }
+
+        switch( node.type ) {
+        case 'FunctionBody':
+            break;
+        case 'BreakStatement':
+        case 'ContinueStatement':
+        case 'DebuggerStatement':
+        case 'DoWhileStatement':
+        case 'EmptyStatement':
+        case 'ExpressionStatement':
+        case 'ForInStatement':
+        case 'ForOfStatement':
+        case 'ForStatement':
+        case 'IfStatement':
+        case 'LabeledStatement':
+        case 'ReturnStatement':
+        case 'SwitchStatement':
+        case 'ThrowStatement':
+        case 'TryStatement':
+        case 'WhileStatement':
+        case 'WithStatement':
+            console.info(`BabelProvider::processStatement: ${node.type} is ignored.`, node);
+            break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    /*
+        Declaration: ClassDeclaration
+            | FunctionDeclaration
+            | VariableDeclaration;
+     */
+    processDeclaration( node, parentIdentifier, currentIdentifier ) {
+        switch( node.type ) {
+        case 'ClassDeclaration':
+            this.processClassDeclaration( node, parentIdentifier, currentIdentifier );
+            break;
+        case 'FunctionDeclaration':
+            this.processFunctionDeclaration( node, parentIdentifier, currentIdentifier );
+            break;
+        case 'VariableDeclaration':
+            this.processVariableDeclaration( node, parentIdentifier, currentIdentifier );
+            break;
+        default:
+            return false;
+        }
+        return true;
+    }
+
+    /*
+        ExportAllDeclaration <: ModuleDeclaration {
+            type: "ExportAllDeclaration";
+            source: Literal;
+            loc: SourceLocation | null;
+            exported: Identifier | null;
+        }
+     */
+    processExportAllDeclaration( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ExportAllDeclaration', 'Wrong node type!' );
+
+        const exportAllIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        if( node.exported ) {
+            exportAllIdentifier.setName( this.getIdentifierAsString( node.exported ) );
+        } else {
+            exportAllIdentifier.setName('unnamed export');
+        }
+        exportAllIdentifier.addKind('export all');
+    }
+
+    /*
+        ExportDefaultDeclaration <: ModuleDeclaration {
+            type: "ExportDefaultDeclaration";
+            loc: SourceLocation | null;
+            declaration: AnonymousDefaultExportedFunctionDeclaration
+                | FunctionDeclaration
+                | AnonymousDefaultExportedClassDeclaration
+                | ClassDeclaration
+                | Expression;
+        }
+     */
+    processExportDefaultDeclaration( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ExportDefaultDeclaration', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setName('ExportDefaultDeclaration').addKind('unimplemented');
     }
 
     /*
@@ -307,19 +439,6 @@ export class BabelProvider extends IdentifiersProvider {
             loc: SourceLocation | null;
         }
 
-        ExportSpecifier <: ModuleSpecifier {
-            type: "ExportSpecifier";
-            exported: Identifier;
-            loc: SourceLocation | null;
-            local: Identifier;
-        }
-
-        Declaration <: Statement {
-            loc: SourceLocation | null;
-        }
-
-        Declaration: ClassDeclaration | FunctionDeclaration | VariableDeclaration
-
         ExportNamedDeclaration:
         .declaration        {Node}
         .end                {number}
@@ -330,34 +449,38 @@ export class BabelProvider extends IdentifiersProvider {
         .trailingComments   ['CommentBlock']
         .type               'ExportNamedDeclaration'
      */
-    consumeExportNamedDeclaration() {
-        // check specifiers?
-        if( this._currentEsTreeNode.declaration !== null ) {
-            this._currentEsTreeNode = this._currentEsTreeNode.declaration;
-            this.consumeDeclaration();
-        } else {
-            // export { constOne, varOne, letOne, constTwo };
-            // export { constOne as renamedOne, varOne as renamedTwo, letOne as renamedThree, constTwo as renamedFour };
-            this._currentEsTreeNode = null;
+    processExportNamedDeclaration( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ExportNamedDeclaration', 'Wrong node type!' );
+
+        const exportedIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        exportedIdentifier.addKind('export');
+        if( node.specifiers.length > 0 ) {
+            exportedIdentifier.addKind('multiple');
+            for( const specifier of node.specifiers ) {
+                const identifier = this.addNewIdentifier( exportedIdentifier );
+                this.processExportSpecifier( specifier, exportedIdentifier, identifier );
+            }
+        }
+
+        if( node.declaration !== null ) {
+            this.processDeclaration( node.declaration, parentIdentifier, exportedIdentifier );
         }
     }
 
-    consumeDeclaration() {
-        switch( this._currentEsTreeNode.type ) {
-        case 'VariableDeclaration':
-            this.consumeVariableDeclaration();
-            break;
-        case 'ClassDeclaration':
-            this.consumeClassDeclaration();
-            break;
-        case 'FunctionDeclaration':
-            this.consumeFunctionDeclaration();
-            break;
-        default:
-            console.warn( 'BabelProvider::consumeDeclaration: Unknown declaration type!', this._currentEsTreeNode.type );
-            console.info( this._currentEsTreeNode );
-            this._currentEsTreeNode = null;
+    /*
+        ExportSpecifier <: ModuleSpecifier {
+            type: "ExportSpecifier";
+            exported: Identifier;
+            loc: SourceLocation | null;
+            local: Identifier;
         }
+     */
+    processExportSpecifier( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ExportSpecifier', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.processIdentifier( node.local, parentIdentifier, identifier );
+        identifier.getAdditionalDataMap().set( 'exported', this.getIdentifierName( node.exported ) );
     }
 
     /*
@@ -367,7 +490,27 @@ export class BabelProvider extends IdentifiersProvider {
             kind: "var" | "let" | "const";
             loc: SourceLocation | null;
         }
+     */
+    processVariableDeclaration( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'VariableDeclaration', 'Wrong node type!' );
 
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        if( node.declarations > 1 ) {
+            identifier.addKind('multiple');
+            for( const variableDeclarator of node.declarations ) {
+                const variableIdentifier = this.addNewIdentifier( parentIdentifier );
+                this.processVariableDeclarator( variableDeclarator, identifier, variableIdentifier );
+                variableIdentifier.addKind( node.kind );
+                variableIdentifier.addKind('variable');
+            }
+        } else {
+            this.processVariableDeclarator( node.declarations[0], parentIdentifier, identifier );
+            identifier.addKind( node.kind );
+            identifier.addKind('variable');
+        }
+    }
+
+    /*
         VariableDeclarator <: Node {
             type: "VariableDeclarator";
             id: Pattern;
@@ -375,37 +518,175 @@ export class BabelProvider extends IdentifiersProvider {
             loc: SourceLocation | null;
         }
      */
-    consumeVariableDeclaration() {
-        console.log('BabelProvider::consumeVariableDeclaration');
-        const variableDeclaration = this._currentEsTreeNode;
-        for( const variableDeclarator of this._currentEsTreeNode.declarations ) {
-            if( variableDeclarator.type === 'VariableDeclarator' ) {
-                this._currentEsTreeNode = variableDeclarator.id;
-                this.consumePattern();
-                this._currentIdentifier.addKind( variableDeclaration.kind );
-                this._currentIdentifier = this._currentIdentifier.getParent();
-            } else {
-                console.warn( 'BabelProvider::consumeVariableDeclaration: expected VariableDeclarator as type of node!', variableDeclarator.type );
-                console.info( variableDeclarator );
-            }
+    processVariableDeclarator( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'VariableDeclarator', 'Wrong node type!' );
+
+        return this.processPattern( node.id, parentIdentifier, currentIdentifier );
+    }
+
+    /*
+        ClassDeclaration <: Class, Declaration {
+            type: "ClassDeclaration";
+            id: Identifier;
+            loc: SourceLocation | null;
+            superClass: Expression | null;
+            body: ClassBody;
+        }
+     */
+    processClassDeclaration( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ClassDeclaration', 'Wrong node type!' );
+
+        const classIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        classIdentifier.addKind('class');
+        this.processIdentifier( node.id, parentIdentifier, classIdentifier );
+    }
+
+    /*
+        ClassBody <: Node {
+            type: "ClassBody";
+            body: [ MethodDefinition ];
+            loc: SourceLocation | null;
+        }
+     */
+    processClassBody( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ClassBody', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setName('ClassBody').addKind('unimplemented');
+    }
+
+    /*
+        MethodDefinition <: Node {
+            type: "MethodDefinition";
+            key: Expression;
+            value: FunctionExpression;
+            kind: "constructor" | "method" | "get" | "set";
+            computed: boolean;
+            static: boolean;
+            loc: SourceLocation | null;
+        }
+     */
+    processMethodDefinition( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'MethodDefinition', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setName('MethodDefinition').addKind('unimplemented');
+    }
+
+    /*
+        FunctionDeclaration <: Function, Declaration {
+            type: "FunctionDeclaration";
+            id: Identifier;
+            loc: SourceLocation | null;
+            async: boolean;
+            generator: boolean;
+            params: [ Pattern ];
+            body: FunctionBody;
         }
 
-        this._currentEsTreeNode = null;
+        FunctionBody <: BlockStatement {
+            body: [ Directive | Statement ];
+        }
+     */
+    processFunctionDeclaration( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'FunctionDeclaration', 'Wrong node type!' );
+
+        const functionIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        functionIdentifier.addKind('function');
+        this.processIdentifier( node.id, parentIdentifier, functionIdentifier );
+        if( node.async ) functionIdentifier.addKind('async');
+        if( node.generator ) functionIdentifier.addKind('generator');
+        // TODO: params array
     }
 
-    consumeClassDeclaration() {
-        console.info( 'TODO: implement ClassDeclaration' );
-        this._currentEsTreeNode = null;
+    /*
+        ImportDeclaration <: ModuleDeclaration {
+            type: "ImportDeclaration";
+            source: Literal;
+            specifiers: [ ImportSpecifier | ImportDefaultSpecifier | ImportNamespaceSpecifier ];
+            loc: SourceLocation | null;
+        }
+     */
+    processImportDeclaration( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ImportDeclaration', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.addKind('import');
+        identifier.setName('ImportDeclaration');
+        for( const specifier of node.specifiers ) {
+            switch( specifier.type ) {
+            case 'ImportSpecifier':
+                this.processImportSpecifier( specifier, parentIdentifier, identifier );
+                break;
+            case 'ImportDefaultSpecifier':
+                this.processImportDefaultSpecifier( specifier, parentIdentifier, identifier );
+                break;
+            case 'ImportNamespaceSpecifier':
+                this.processImportNamespaceSpecifier( specifier, parentIdentifier, identifier );
+                break;
+            default:
+                console.warn( 'BabelProvider::processImportDeclaration: Unknown specifier.type!', specifier.type );
+                console.info( 'Program', node );
+            }
+        }
     }
 
-    consumeFunctionDeclaration() {
-        console.info( 'TODO: implement FunctionDeclaration' );
-        this._currentEsTreeNode = null;
+    /*
+        ImportDefaultSpecifier <: ModuleSpecifier {
+            type: "ImportDefaultSpecifier";
+            loc: SourceLocation | null;
+            local: Identifier;
+        }
+    */
+    processImportDefaultSpecifier( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ImportDefaultSpecifier', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.processIdentifier( node.imported, parentIdentifier, identifier );
     }
 
-    consumeImportDeclaration() {
-        console.info( 'TODO: implement ImportDeclaration' );
-        this._currentEsTreeNode = null;
+    /*
+        ImportExpression <: Expression {
+            type: "ImportExpression";
+            source: Expression;
+            loc: SourceLocation | null;
+        }
+    */
+    processImportExpression( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ImportExpression', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setName('ImportExpression').addKind('unimplemented');
+    }
+
+    /*
+        ImportNamespaceSpecifier <: ModuleSpecifier {
+            type: "ImportNamespaceSpecifier";
+            loc: SourceLocation | null;
+            local: Identifier;
+        }
+    */
+    processImportNamespaceSpecifier( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ImportNamespaceSpecifier', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.processIdentifier( node.local, parentIdentifier, identifier );
+    }
+
+    /*
+        ImportSpecifier <: ModuleSpecifier {
+            type: "ImportSpecifier";
+            imported: Identifier;
+            loc: SourceLocation | null;
+            local: Identifier;
+        }
+    */
+    processImportSpecifier( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ImportSpecifier', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.processIdentifier( node.imported, parentIdentifier, identifier );
+        identifier.getAdditionalDataMap().set( 'local', this.getIdentifierName( node.local ) );
     }
 
     /*
@@ -415,33 +696,94 @@ export class BabelProvider extends IdentifiersProvider {
             loc: SourceLocation | null;
         }
      */
-    consumeExpressionStatement() {
-        console.info( 'TODO: implement ExpressionStatement' );
-        this._currentEsTreeNode = null;
+    processExpressionStatement( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ExpressionStatement', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setName('ExpressionStatement').addKind('unimplemented');
     }
 
     /*
-        Pattern: ArrayPattern | AssignmentPattern | Identifier | MemberExpression | ObjectPattern | RestElement
+        Pattern: ArrayPattern
+            | AssignmentPattern
+            | Identifier
+            | MemberExpression
+            | ObjectPattern
+            | RestElement
+     */
+    processPattern( node, parentIdentifier, currentIdentifier ) {
+        switch( node.type ) {
+        case 'Identifier':
+            this.processIdentifier( node, parentIdentifier, currentIdentifier );
+            break;
+        case 'ArrayPattern':
+            this.processArrayPattern( node, parentIdentifier, currentIdentifier );
+            break;
+        case 'AssignmentPattern':
+            this.processAssignmentPattern( node, parentIdentifier, currentIdentifier );
+            break;
+        case 'MemberExpression':
+            this.processMemberExpression( node, parentIdentifier, currentIdentifier );
+            break;
+        case 'ObjectPattern':
+            this.processObjectPattern( node, parentIdentifier, currentIdentifier );
+            break;
+        case 'RestElement':
+            this.processRestElement( node, parentIdentifier, currentIdentifier );
+            break;
+        default:
+            console.warn( 'BabelProvider::processPattern: Unknown Pattern type!', node.type );
+            console.info( node );
+        }
+    }
 
+    /*
+        Identifier <: Expression, Pattern {
+            type: "Identifier";
+            name: string;
+            loc: SourceLocation | null;
+        }
+     */
+    processIdentifier( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'Identifier', 'Wrong node type!' );
+
+        currentIdentifier.setName( node.name );
+    }
+
+    getIdentifierName( node ) {
+        return node.name;
+    }
+
+    /*
         ArrayPattern <: Pattern {
             type: "ArrayPattern";
             elements: [ Pattern | null ];
             loc: SourceLocation | null;
         }
+     */
+    processArrayPattern( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ArrayPattern', 'Wrong node type!' );
 
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setName( 'ArrayPattern' ).addKind('unimplemented');
+    }
+
+    /*
         AssignmentPattern <: Pattern {
             type: "AssignmentPattern";
             left: Pattern;
             right: Expression;
             loc: SourceLocation | null;
         }
+     */
+    processAssignmentPattern( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'AssignmentPattern', 'Wrong node type!' );
 
-        Identifier <: Expression, Pattern {
-            type: "Identifier";
-            name: string;
-            loc: SourceLocation | null;
-        }
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setName( 'AssignmentPattern' ).addKind('unimplemented');
+    }
 
+    /*
         MemberExpression <: Expression, Pattern, ChainElement {
             type: "MemberExpression";
             object: Expression | Super;
@@ -450,71 +792,55 @@ export class BabelProvider extends IdentifiersProvider {
             loc: SourceLocation | null;
             optional: boolean;
         }
+     */
+    processMemberExpression( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'MemberExpression', 'Wrong node type!' );
 
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setName( 'MemberExpression' ).addKind('unimplemented');
+    }
+
+    /*
         ObjectPattern <: Pattern {
             type: "ObjectPattern";
             properties: [ AssignmentProperty | RestElement ];
             loc: SourceLocation | null;
         }
+     */
+    processObjectPattern( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ObjectPattern', 'Wrong node type!' );
 
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setName( 'ObjectPattern' ).addKind('unimplemented');
+    }
+
+    /*
         RestElement <: Pattern {
             type: "RestElement";
             argument: Pattern;
             loc: SourceLocation | null;
         }
-
      */
-    consumePattern() {
-        switch( this._currentEsTreeNode.type ) {
-        case 'Identifier':
-            this._currentIdentifier = this.addNewChildIdentifier().setName(this._currentEsTreeNode.name);
-            break;
-        case 'ArrayPattern':
-            // TODO: implement
-            this._currentIdentifier = this.addNewChildIdentifier().setName('array');
-            break;
-        case 'AssignmentPattern':
-            // TODO: implement
-            this._currentIdentifier = this.addNewChildIdentifier().setName('assignment');
-            break;
-        case 'MemberExpression':
-            // TODO: implement
-            this._currentIdentifier = this.addNewChildIdentifier().setName('member');
-            break;
-        case 'ObjectPattern':
-            // TODO: implement
-            this._currentIdentifier = this.addNewChildIdentifier().setName('object');
-            break;
-        case 'RestElement':
-            // TODO: implement
-            this._currentIdentifier = this.addNewChildIdentifier().setName('rest');
-            break;
-        default:
-            console.warn( 'BabelProvider::consumePattern: Unknown Pattern type!', this._currentEsTreeNode.type );
-            console.info( this._currentEsTreeNode );
+    processRestElement( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'RestElement', 'Wrong node type!' );
+
+        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setName( 'RestElement' ).addKind('unimplemented');
+    }
+
+    /**
+     * Adds a new Identifier to `parentIdentifier` and returns the newly added Identifier.
+     * @param {Identifier} parentIdentifier
+     * @return {Identifier} Returns the newly added identifier.
+     *
+     * @throws {Error} When `parentIdentifier` is not given.
+     */
+    addNewIdentifier( parentIdentifier ) {
+        if( !parentIdentifier ) {
+            throw new Error('"parentIdentifier" is required argument.');
         }
-    }
 
-    /**
-     * Adds a new Identifier which can have children to a given `parentIdentifier`.
-     * If `parentIdentifier` is empty, identifier will be added to the current Identifier.
-     */
-    addNewParentIdentifier( parentIdentifier ) {
-        if( !parentIdentifier ) parentIdentifier = this._currentIdentifier;
-
-        const identifier = new Identifier({ textEditor: this._textEditor, canHaveChildren: true, parent: parentIdentifier });
-        this._topScopeIdentifier.addChild( identifier );
-        return identifier;
-    }
-
-    /**
-     * Adds a new Identifier which is child and **cannot*** have children to a given `parentIdentifier`.
-     * If `parentIdentifier` is empty, identifier will be added to the current Identifier.
-     */
-    addNewChildIdentifier( parentIdentifier ) {
-        if( !parentIdentifier ) parentIdentifier = this._currentIdentifier;
-
-        const identifier = new Identifier({ textEditor: this._textEditor, canHaveChildren: false, parent: parentIdentifier });
+        const identifier = new Identifier({ textEditor: this._textEditor, parent: parentIdentifier });
         parentIdentifier.addChild( identifier );
         return identifier;
     }
@@ -524,8 +850,57 @@ export class BabelProvider extends IdentifiersProvider {
 
 /*
 
-Declaration: ClassDeclaration | FunctionDeclaration | VariableDeclaration
-Pattern: ArrayPattern | AssignmentPattern | Identifier | MemberExpression | ObjectPattern | RestElement
+Declaration: ClassDeclaration | FunctionDeclaration | VariableDeclaration;
+Expression: ArrayExpression
+    | ArrowFunctionExpression
+    | AssignmentExpression
+    | AwaitExpression
+    | BinaryExpression
+    | CallExpression
+    | ChainExpression
+    | ClassExpression
+    | ConditionalExpression
+    | FunctionExpression
+    | Identifier
+    | ImportExpression
+    | Literal
+    | LogicalExpression
+    | MemberExpression
+    | MetaProperty
+    | NewExpression
+    | ObjectExpression
+    | SequenceExpression
+    | TaggedTemplateExpression
+    | TemplateLiteral
+    | ThisExpression
+    | UnaryExpression
+    | UpdateExpression
+    | YieldExpression
+ModuleDeclaration: ExportAllDeclaration
+    | ExportDefaultDeclaration
+    | ExportNamedDeclaration
+    | ImportDeclaration;
+Pattern: ArrayPattern | AssignmentPattern | Identifier | MemberExpression | ObjectPattern | RestElement;
+BlockStatement: FunctionBody
+Statement: BlockStatement( FunctionBody )
+    | BreakStatement
+    | ContinueStatement
+    | DebuggerStatement
+    | Declaration( ClassDeclaration | FunctionDeclaration | VariableDeclaration )
+    | DoWhileStatement
+    | EmptyStatement
+    | ExpressionStatement
+    | ForInStatement
+    | ForOfStatement
+    | ForStatement
+    | IfStatement
+    | LabeledStatement
+    | ReturnStatement
+    | SwitchStatement
+    | ThrowStatement
+    | TryStatement
+    | WhileStatement
+    | WithStatement;
 
 AnonymousDefaultExportedClassDeclaration <: Class {
     type: "ClassDeclaration";
@@ -710,22 +1085,19 @@ ExportDefaultDeclaration <: ModuleDeclaration {
     loc: SourceLocation | null;
     declaration: AnonymousDefaultExportedFunctionDeclaration | FunctionDeclaration | AnonymousDefaultExportedClassDeclaration | ClassDeclaration | Expression;
 }
-
-    ExportNamedDeclaration <: ModuleDeclaration {
-        type: "ExportNamedDeclaration";
-        declaration: Declaration | null;
-        specifiers: [ ExportSpecifier ];
-        source: Literal | null;
-        loc: SourceLocation | null;
-    }
-
-    ExportSpecifier <: ModuleSpecifier {
-        type: "ExportSpecifier";
-        exported: Identifier;
-        loc: SourceLocation | null;
-        local: Identifier;
-    }
-
+ExportNamedDeclaration <: ModuleDeclaration {
+    type: "ExportNamedDeclaration";
+    declaration: Declaration | null;
+    specifiers: [ ExportSpecifier ];
+    source: Literal | null;
+    loc: SourceLocation | null;
+}
+ExportSpecifier <: ModuleSpecifier {
+    type: "ExportSpecifier";
+    exported: Identifier;
+    loc: SourceLocation | null;
+    local: Identifier;
+}
 Expression <: Node {
     loc: SourceLocation | null;
 }
