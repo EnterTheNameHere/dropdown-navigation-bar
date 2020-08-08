@@ -33,7 +33,7 @@ export class DropdownBoxView {
      *
      * @private
      */
-    highlightedIndex = 0;
+    highlightedIndex = -1;
 
     /**
      * Holds an array of {@link DropdownBoxItemWrapperView}s displayed on dropdown list.
@@ -462,7 +462,7 @@ export class DropdownBoxView {
      * @return {number}
      */
     getHighlightedIndex() {
-        if( typeof(this.highlightedIndex) !== 'number' ) this.highlightedIndex = 0;
+        if( typeof(this.highlightedIndex) !== 'number' ) this.highlightedIndex = -1;
         return this.highlightedIndex;
     }
 
@@ -608,7 +608,7 @@ export class DropdownBoxView {
     changeHighlightedToIndex( index = 0 ) {
         const items = this.getItems();
         if( !items.length ) {
-            this.highlightedIndex = 0;
+            this.highlightedIndex = -1;
             return;
         }
 
