@@ -627,7 +627,7 @@ export class DropdownBoxView {
         if( oldIndex !== this.highlightedIndex ) {
             // oldIndex comes from this object, not from outside
             // eslint-disable-next-line security/detect-object-injection
-            const oldIndexComponent = this.listItems[oldIndex].component;
+            const oldIndexComponent = this.listItems[oldIndex]?.component;
             if( oldIndexComponent ) {
                 oldIndexComponent.update({ active: false });
             }
