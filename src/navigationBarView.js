@@ -166,7 +166,7 @@ export class NavigationBarView {
         this._subscriptions = new CompositeDisposable();
 
         this._navigationBar = navigationBar;
-        this._subscriptions.add( this._navigationBar.onDidChangeTextEditor( () => {
+        this._subscriptions.add( this._navigationBar.onDidChangeActiveTextEditor( () => {
             this.updateDropdownBoxes();
         }));
         this._subscriptions.add( this._navigationBar.onDidChangeSelectedIdentifier( () => {

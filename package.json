@@ -11,14 +11,10 @@
         "hint",
         "help"
     ],
-    "activationCommands": {
-        "atom-workspace": "dropdown-navigation-bar:toggle"
-    },
     "viewProviders": [
         "navigationBarViewProvider"
     ],
     "deserializers": {
-        "dropdown-navigation-bar/NavigationBarPackage": "deserializeNavigationBarPackage"
     },
     "repository": "https://github.com/EnterTheNameHere/dropdown-navigation-bar.git",
     "license": "MIT",

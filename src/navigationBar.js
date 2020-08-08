@@ -1,246 +1,203 @@
 /* global atom */
 
 import { CompositeDisposable, Emitter } from 'atom'; // eslint-disable-line import/no-unresolved
-//import { Identifier } from './identifier';
-//import { TopScopeIdentifier } from './topScopeIdentifier';
 import { ProvidersRegistry } from './babelProvider';
-/*
-function getIdentifiers( textEditor ) {
-    const global = new TopScopeIdentifier( textEditor );
 
-    global.addChild( new Identifier({
-        name: 'constOne',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: global,
-        kind: ['const', 'export'],
-    }));
-    global.addChild( new Identifier({
-        name: 'constTwo',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: global,
-        kind: ['const'],
-    }));
-    global.addChild( new Identifier({
-        name: 'letOne',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: global,
-        kind: ['export', 'let'],
-    }));
-    global.addChild( new Identifier({
-        name: 'letTwo',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: global,
-        kind: ['let'],
-    }));
-    global.addChild( new Identifier({
-        name: 'functionOne',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: global,
-        kind: ['export', 'function'],
-    }));
-    global.addChild( new Identifier({
-        name: 'functionTwo',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: global,
-        kind: ['function'],
-    }));
-    global.addChild( new Identifier({
-        name: 'addingMore',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: global,
-        kind: ['function'],
-    }));
-    global.addChild( new Identifier({
-        name: 'andMore',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: global,
-        kind: ['const'],
-    }));
-
-    const classOne = new Identifier({
-        name: 'classOne',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: global,
-        kind: ['class', 'export'],
-    });
-    classOne.addChild( new Identifier({
-        name: 'propertyOne',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: classOne,
-        kind: ['property', 'const'],
-    }));
-    classOne.addChild( new Identifier({
-        name: 'propertyTwo',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: classOne,
-        kind: ['property', 'variable'],
-    }));
-    classOne.addChild( new Identifier({
-        name: 'methodOne',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: classOne,
-        kind: ['method', 'static'],
-    }));
-    classOne.addChild( new Identifier({
-        name: 'methodTwo',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: classOne,
-        kind: ['method'],
-    }));
-    global.addChild( classOne );
-
-    const classTwo = new Identifier({
-        name: 'classTwo',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: global,
-        kind: ['class'],
-    });
-    classTwo.addChild( new Identifier({
-        name: 'propertyOne',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: classTwo,
-        kind: ['property'],
-    }));
-    classTwo.addChild( new Identifier({
-        name: 'methodOne',
-        startPosition: global.getStartPosition(),
-        endPosition: global.getEndPosition(),
-        textEditor: global.getTextEditor(),
-        parent: classTwo,
-        kind: ['method'],
-    }));
-    global.addChild( classTwo );
-
-    return global;
-}
-*/
+/**
+ * NavigationBar displays two dropdown boxes for current TextEditor,
+ * filled with Identiers found on TextEditor's source code.
+ */
 export class NavigationBar {
-    visible = true;
-    subscriptions = null;
-    activeEditorSubscriptions = null;
-    activeEditor = null;
-    view = null;
-    emitter = new Emitter();
+    /**
+     * Boolean value representing whether NavigationBar is active.
+     * @type {boolean}
+     *
+     * @access private
+     */
+    _active = true;
 
-    _providers = new ProvidersRegistry();
+    /**
+     * Holds subscriptions to the active TextEditor.
+     * @type {CompositeDisposable}
+     *
+     * @access private
+     */
+    _activeEditorSubscriptions = null;
+
+    /**
+     * Holds subscriptions of this NavigationBar.
+     * @type {CompositeDisposable}
+     *
+     * @access private
+     */
+    _subscriptions = null;
+
+    /**
+     * Holds instance of this NavigationBar's view.
+     * @type {NavigationBarView},
+     *
+     * @access private
+     */
+    _view = null;
+
+    /**
+     * Holds instance of active TextEditor from last observation.
+     * @type {TextEditor}
+     */
+    _previousActiveEditor = null;
+
+    /**
+     * Holds instance of this NavigationBar's emitter.
+     * @type {Emitter}
+     *
+     * @access private
+     */
+    _emitter = new Emitter();
+
+    /**
+     * Holds currently selected Identifier on Dropdown boxes.
+     * @type {Identifier}
+     *
+     * @access private
+     */
     _selectedIdentifier = null;
 
+    /**
+     * Holds instance to NavigationBar's providers.
+     * @type {ProvidersRegistry}
+     *
+     * @access private
+     */
+    _providers = new ProvidersRegistry();
+
+    /**
+     * Creates new NavigationBar instance.
+     */
     constructor() {
-        this.subscriptions = new CompositeDisposable();
-        this.activeEditorSubscriptions = new CompositeDisposable();
+        // Create the UI first
+        this._view = atom.views.getView(this);
+
         this.observeActiveTextEditor();
     }
 
+    /**
+     * Releases all resources used by NavigationBar.
+     */
     destroy() {
         this.getView().destroy();
-        this.subscriptions.dispose();
-        this.activeEditorSubscriptions.dispose();
-        this.visible = false;
+        if( this._subscriptions ) this._subscriptions.dispose();
+        if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
+        this._previousActiveEditor = null;
     }
 
+    /**
+     * Deactivates NavigationBar, stopping it's functionality.
+     */
+    deactivate() {
+        this._active = false;
+
+        if( this._subscriptions ) this._subscriptions.dispose();
+        this._previousActiveEditor = null;
+    }
+
+    /**
+     * Activates NavigationBar, resuming it's functionality.
+     */
+    activate() {
+        this._active = true;
+
+        this.observeActiveTextEditor();
+    }
+
+    /**
+     * Starts observing changes in atom's active TextEditor.
+     *
+     * @access private
+     */
     observeActiveTextEditor() {
-        this.subscriptions.add( atom.workspace.observeActiveTextEditor( (textEditor) => {
+        if( !this._active ) return;
+        this._activeEditorSubscriptions = new CompositeDisposable();
+
+        if( !this._subscriptions ) this._subscriptions = new CompositeDisposable();
+        this._subscriptions.add( atom.workspace.observeActiveTextEditor( (textEditor) => {
             //console.log('NavigationBar::observeActiveTextEditor', textEditor);
-            if( textEditor === undefined ) { // No TextEditor is curretly active
-                this.activeEditor = null;
-                this.activeEditorSubscriptions.dispose();
-            } else if ( this.activeEditor !== textEditor ) { // Different TextEditor is now active
-                this.activeEditor = textEditor;
-                this.activeEditorSubscriptions.dispose();
-                this.activeEditorSubscriptions = new CompositeDisposable();
-                this.activeEditorSubscriptions.add( this.activeEditor.onDidSave( () => {
-                    this.emitter.emit( 'did-change-text-editor' );
+            if( textEditor === undefined ) {
+                // No TextEditor is curretly active
+                this._previousActiveEditor = null;
+                if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
+
+                this._emitter.emit( 'did-change-active-text-editor' );
+            } else if ( this._previousActiveEditor !== textEditor ) {
+                // Different TextEditor is now active
+                this._previousActiveEditor = textEditor;
+                if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
+
+                if( !this._activeEditorSubscriptions ) this._activeEditorSubscriptions = new CompositeDisposable();
+                this._activeEditorSubscriptions.add( textEditor.onDidSave( () => {
+                    this._emitter.emit( 'did-change-active-text-editor' );
                 }));
-                this.activeEditorSubscriptions.add( this.activeEditor.onDidChangeGrammar( () => {
-                    this.emitter.emit( 'did-change-text-editor' );
+                this._activeEditorSubscriptions.add( textEditor.onDidChangeGrammar( () => {
+                    this._emitter.emit( 'did-change-active-text-editor' );
                 }));
-                this.emitter.emit( 'did-change-text-editor' );
+
+                this._emitter.emit( 'did-change-active-text-editor' );
             }
+            // Same TextEditor. Don't know why it would be fired with same TextEditor though.
         }));
     }
 
+    /**
+     * Returns Identifier which is serving as source for NavigationBar's dropdown boxes.
+     * @return {Identifier} Selected identifier.
+     */
     getSelectedIdentifier() {
         return this._selectedIdentifier;
     }
 
+    /**
+     * Sets `selectedIdentifier` as the Identifier to be source for dropdown boxes on NavigationBar.
+     * @param {Identifier} selectedIdentifier
+     */
     setSelectedIdentifier( selectedIdentifier ) {
-        //console.log('NavigationBar::setSelectedIdentifier', selectedIdentifier);
+        if( !this._active ) return;
 
         this._selectedIdentifier = selectedIdentifier;
-        this.emitter.emit( 'did-change-selected-identifier' );
+        this._emitter.emit( 'did-change-selected-identifier' );
     }
 
     /**
-     * Notifies subscriber the selected Identifier on dropdown boxes was changed.
+     * Notifies subscriber about change of Identifier selected on dropdown boxes.
      *
      * @param  {Function} callback Function to invoke when selected Identifier changes.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
     onDidChangeSelectedIdentifier( callback ) {
-        return this.emitter.on( 'did-change-selected-identifier', callback );
+        return this._emitter.on( 'did-change-selected-identifier', callback );
     }
 
     /**
-     * Notifies subscriber the active TextEditor changed.
+     * Notifies subscriber about change of active TextEditor.
      *
      * @param  {Function} callback Function to invoke when active TextEditor changes.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
-    onDidChangeTextEditor( callback ) {
-        return this.emitter.on( 'did-change-text-editor', callback );
+    onDidChangeActiveTextEditor( callback ) {
+        return this._emitter.on( 'did-change-active-text-editor', callback );
     }
 
-    show() {
-        if( this.visible ) return;
-
-        this.visible = true;
-        this.getView().element.hidden = false;
-    }
-
-    hide() {
-        if( !this.visible ) return;
-
-        this.visible = false;
-        this.getView().element.hidden = true;
-    }
-
+    /**
+     * Returns view for this NavigationBar.
+     * @return {NavigationBarView} The view.
+     */
     getView() {
-        if( !this.view ) {
-            this.view = atom.views.getView(this);
-        }
-        return this.view;
+        return this._view;
     }
 
+    /**
+     * Returns Identifier provider for given `textEditor`.
+     * @param  {TextEditor} textEditor
+     * @return {IdentifierProvider}
+     */
     getProviderForTextEditor( textEditor ) {
         if( !textEditor ) {
             throw new Error('textEditor argument must be a valid TextEditor instance!');
