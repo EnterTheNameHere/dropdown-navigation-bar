@@ -159,8 +159,8 @@ export class Identifier {
     }
 
     /**
-     * Returns Point where Identifier starts in TextEditor.
-     * @return {Point}
+     * Returns Point where Identifier starts in TextEditor, or null.
+     * @return {Point|null}
      */
     getStartPosition() {
         return this._startPosition;
@@ -177,8 +177,8 @@ export class Identifier {
     }
 
     /**
-     * Returns Point where Identifier starts in TextEditor.
-     * @return {Point}
+     * Returns Point where Identifier starts in TextEditor, or null.
+     * @return {Point|null}
      */
     getEndPosition() {
         return this._endPosition;

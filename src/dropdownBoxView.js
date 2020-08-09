@@ -196,7 +196,7 @@ export class DropdownBoxView {
                 selected: ( index === this.getSelectedIndex() ),
                 active: ( index === this.getHighlightedIndex() ),
                 eventHandlers:{
-                    click: () => { this.changeSelected(index); this.confirmSelection(); },
+                    click: () => { this.confirmSelection(); },
                     mouseover: () => this.changeHighlightedToIndex(index),
                 },
             }, this.renderItem( item ) );

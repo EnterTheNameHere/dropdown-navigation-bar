@@ -1,5 +1,5 @@
 
-import { TextEditor } from 'atom'; // eslint-disable-line import/no-unresolved, no-unused-vars
+import { TextEditor, Point } from 'atom'; // eslint-disable-line import/no-unresolved, no-unused-vars
 import { TopScopeIdentifier } from './topScopeIdentifier';
 import { Identifier } from './identifier';
 import { EmptyIdentifier } from './emptyIdentifier';
@@ -9,7 +9,16 @@ const babelParser = require('@babel/parser');
 
 export class ProvidersRegistry {
     getProviderForTextEditor( textEditor ) {
-        return new BabelProvider( textEditor );
+        if( !textEditor ) {
+            return null;
+        }
+
+        switch( textEditor.getRootScopeDescriptor().scopes[0] ) {
+        case 'source.js':
+            return new BabelProvider( textEditor );
+        default:
+            return null;
+        }
     }
 }
 
@@ -163,12 +172,19 @@ export class BabelProvider extends IdentifiersProvider {
             identifier = this._topScopeIdentifier;
         }
 
+        if( identifier instanceof EmptyIdentifier ) {
+            identifier = identifier.getParent();
+        }
+
         return [
             new EmptyIdentifier( identifier ),
             ...identifier.getChildren().filter( (ident) => {
                 if( ident.isKind('variable')
                     || ident.isKind('function')
                     || ident.isKind('method')
+                    || ident.isKind('constructor')
+                    || ident.isKind('get')
+                    || ident.isKind('set')
                     || ident.isKind('property')
                     || ident.isKind('unimplemented')
                     || ident.isKind('export all')
@@ -252,10 +268,10 @@ export class BabelProvider extends IdentifiersProvider {
         .start      {number}
         .type       'File'
      */
-    processFile( node, parentIdentifier/*, currentIdentifier*/ ) {
+    processFile( node, currentIdentifier ) {
         console.assert( node.type === 'File', 'Wrong node type!' );
 
-        this.processProgram( node.program, parentIdentifier );
+        this.processProgram( node.program, currentIdentifier );
     }
 
     /*
@@ -276,12 +292,12 @@ export class BabelProvider extends IdentifiersProvider {
         .start          {number}
         .type           'Program'
      */
-    processProgram( node, parentIdentifier/*, currentIdentifier*/ ) {
+    processProgram( node, currentIdentifier ) {
         console.assert( node.type === 'Program', 'Wrong node type!' );
 
         for( const body of node.body ) {
-            if( !this.processStatement( body, parentIdentifier ) ) {
-                if( !this.processModuleDeclaration( body, parentIdentifier ) ) {
+            if( !this.processStatement( body, currentIdentifier ) ) {
+                if( !this.processModuleDeclaration( body, currentIdentifier ) ) {
                     console.warn( 'BabelProvider::processProgram: Unknown program.body.type!', body.type );
                     console.info( 'Program', node );
                     console.info( 'esTree:', this._esTree );
@@ -296,19 +312,19 @@ export class BabelProvider extends IdentifiersProvider {
             | ExportNamedDeclaration
             | ImportDeclaration;
      */
-    processModuleDeclaration( node, parentIdentifier/*, currentIdentifier*/ ) {
+    processModuleDeclaration( node, currentIdentifier ) {
         switch( node.type ) {
         case 'ExportAllDeclaration':
-            this.processExportAllDeclaration( node, parentIdentifier );
+            this.processExportAllDeclaration( node, currentIdentifier );
             break;
         case 'ExportDefaultDeclaration':
-            this.processExportDefaultDeclaration( node, parentIdentifier );
+            this.processExportDefaultDeclaration( node, currentIdentifier );
             break;
         case 'ExportNamedDeclaration':
-            this.processExportNamedDeclaration( node, parentIdentifier );
+            this.processExportNamedDeclaration( node, currentIdentifier );
             break;
         case 'ImportDeclaration':
-            this.processImportDeclaration( node, parentIdentifier );
+            this.processImportDeclaration( node, currentIdentifier );
             break;
         default:
             return false;
@@ -337,8 +353,8 @@ export class BabelProvider extends IdentifiersProvider {
             | WhileStatement
             | WithStatement;
      */
-    processStatement( node, parentIdentifier/*, currentIdentifier*/ ) {
-        if( this.processDeclaration( node, parentIdentifier ) ) {
+    processStatement( node, currentIdentifier ) {
+        if( this.processDeclaration( node, currentIdentifier ) ) {
             return true;
         }
 
@@ -495,6 +511,8 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'VariableDeclaration', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.setStartPosition( new Point( node.loc.start.line - 1, node.loc.start.column) );
+        identifier.setEndPosition( new Point( node.loc.end.line - 1, node.loc.end.column ) );
         if( node.declarations > 1 ) {
             identifier.addKind('multiple');
             for( const variableDeclarator of node.declarations ) {
@@ -538,21 +556,38 @@ export class BabelProvider extends IdentifiersProvider {
 
         const classIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
         classIdentifier.addKind('class');
+        classIdentifier.setStartPosition( new Point( node.loc.start.line - 1, node.loc.start.column ) );
+        classIdentifier.setEndPosition( new Point( node.loc.end.line - 1, node.loc.end.column ) );
         this.processIdentifier( node.id, parentIdentifier, classIdentifier );
+        this.processClassBody( node.body, parentIdentifier, classIdentifier );
     }
 
     /*
         ClassBody <: Node {
             type: "ClassBody";
-            body: [ MethodDefinition ];
+            body: [ MethodDefinition | PropertyDefinition ];
             loc: SourceLocation | null;
         }
      */
     processClassBody( node, parentIdentifier, currentIdentifier ) {
         console.assert( node.type === 'ClassBody', 'Wrong node type!' );
+        console.assert( currentIdentifier !== undefined, 'currentIdentifier in ClassBody cannot be undefined but must point to class Identifier!' );
 
-        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
-        identifier.setName('ClassBody').addKind('unimplemented');
+        for( const member of node.body ) {
+            switch( member.type ) {
+            case 'MethodDefinition':
+            case 'ClassMethod': // That's how it's named in Babel
+                this.processMethodDefinition( member, parentIdentifier, currentIdentifier );
+                break;
+            case 'PropertyDefinition':
+            case 'ClassProperty': // That's how it's named in Babel
+                this.processPropertyDefinition( member, parentIdentifier, currentIdentifier );
+                break;
+            default:
+                console.warn( 'BabelProvider::processClassBody: Unknown class member type!', member.type );
+                console.info( 'ClassBody', node );
+            }
+        }
     }
 
     /*
@@ -565,12 +600,130 @@ export class BabelProvider extends IdentifiersProvider {
             static: boolean;
             loc: SourceLocation | null;
         }
+
+        BabelClassMethod <: MethodDefinition {
+            type: "ClassMethod";
+            kind: "constructor" | "method" | "get" | "set";
+            key: for computed=true [ Expression ]
+            key: for computed=false [ Identifier | Literal ];
+            params: [ LVal ];
+            body: BlockStatement;
+            computed: boolean;
+            static: boolean | null;
+            abstract: boolean
+            access: [ "public" | "private" | "protected" ] | null;
+            accessibility: [ "public" | "private" | "protected" ] | null;
+            async: boolean;
+            decorators: [ Decorator ] | null;
+            generator: boolean;
+            optional: boolean | null;
+            returnType: TypeAnnotation | TSTypeAnnotation | Noop | null;
+            typeParameters: TypeParameterDeclaration | TSTypeParameterDeclaration | Noop | null;
+        }
      */
     processMethodDefinition( node, parentIdentifier, currentIdentifier ) {
-        console.assert( node.type === 'MethodDefinition', 'Wrong node type!' );
+        console.assert( node.type === 'MethodDefinition' || node.type === 'ClassMethod', 'Wrong node type!' );
+        console.assert( currentIdentifier !== undefined, 'currentIdentifier in class MethodDefinition cannot be undefined but must point to class Identifier!' );
 
-        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
-        identifier.setName('MethodDefinition').addKind('unimplemented');
+        const methodIdentifier = this.addNewIdentifier( currentIdentifier );
+        methodIdentifier.addKind( node.kind );
+        if( node.computed ) {
+            methodIdentifier.addKind('computed');
+            // TODO: node.key is Expression
+            methodIdentifier.setName('Expression').addKind('unimplemented');
+        } else {
+            switch( node.key.type ) {
+            case 'Identifier':
+                this.processIdentifier( node.key, parentIdentifier, methodIdentifier );
+                break;
+            case 'Literal':
+                methodIdentifier.setName('Literal').addKind('unimplemented');
+                break;
+            default:
+                console.warn( 'BabelProvider::processMethodDefinition: Unknown class member key type!', node.key.type );
+                console.info( 'MethodDefinition', node );
+            }
+        }
+        node.static && methodIdentifier.addKind('static');
+        node.abstract && methodIdentifier.addKind('abstract');
+        node.access && methodIdentifier.addKind( node.access );
+        node.accessibility && methodIdentifier.addKind( node.accessibility );
+        node.async && methodIdentifier.addKind('async');
+        node.generator && methodIdentifier.addKind('generator');
+        node.optional && methodIdentifier.addKind('optional');
+
+        // TODO: params
+        // TODO: decorators
+        // TODO: returnType
+        // TODO: typeParameters
+    }
+
+    /*
+        PropertyDefinition <: Node {
+            type: "PropertyDefinition";
+            key: Expression | PrivateIdentifier;
+            value: Expression | null;
+            computed: boolean;
+            static: boolean;
+        }
+
+        BabelClassProperty <: PropertyDefinition {
+            type: "ClassProperty";
+            key: Identifier | StringLiteral | NumericLiteral | Expression;
+            value: Expression | null;
+            typeAnnotation: TypeAnnotation | TSTypeAnnotation | Noop | null;
+            decorators: Array<Decorator> | null;
+            computed: boolean;
+            abstract: boolean | null;
+            accessibility: [ "public" | "private" | "protected" ] | null;
+            definite: boolean | null;
+            optional: boolean | null;
+            readonly: boolean | null;
+            static: boolean | null;
+        }
+
+        PrivateIdentifier <: Node {
+            type: "PrivateIdentifier";
+            name: string;
+        }
+
+        MemberExpression {
+            property: Expression | PrivateIdentifier;
+        }
+     */
+    processPropertyDefinition( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'PropertyDefinition' || node.type === 'ClassProperty', 'Wrong node type!' );
+        console.assert( currentIdentifier !== undefined, 'currentIdentifier in class PropertyDefinition cannot be undefined but must point to class Identifier!' );
+
+        const propertyIdentifier = this.addNewIdentifier( currentIdentifier );
+        propertyIdentifier.addKind('property');
+        switch( node.key.type ) {
+        case 'Identifier':
+            this.processIdentifier( node.key, parentIdentifier, propertyIdentifier );
+            break;
+        case 'StringLiteral':
+            propertyIdentifier.setName('StringLiteral').addKind('unimplemented');
+            break;
+        case 'NumericLiteral':
+            propertyIdentifier.setName('NumericLiteral').addKind('unimplemented');
+            break;
+        case 'Expression':
+            propertyIdentifier.setName('Expression').addKind('unimplemented');
+            break;
+        default:
+            console.warn( 'BabelProvider::processPropertyDefinition: Unknown class member key type!', node.key.type );
+            console.info( 'PropertyDefinition', node );
+        }
+        node.computed && propertyIdentifier.addKind('computed');
+        node.abstract && propertyIdentifier.addKind('abstract');
+        node.accessibility && propertyIdentifier.addKind( node.accessibility );
+        node.definite && propertyIdentifier.addKind('definite');
+        node.optional && propertyIdentifier.addKind('optional');
+        node.readonly && propertyIdentifier.addKind('readonly');
+        node.static && propertyIdentifier.addKind('static');
+
+        // TODO: decorators
+        // TODO: typeAnnotation
     }
 
     /*
@@ -593,6 +746,8 @@ export class BabelProvider extends IdentifiersProvider {
 
         const functionIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
         functionIdentifier.addKind('function');
+        functionIdentifier.setStartPosition( new Point( node.loc.start.line - 1, node.loc.start.column) );
+        functionIdentifier.setEndPosition( new Point( node.loc.end.line - 1, node.loc.end.column ) );
         this.processIdentifier( node.id, parentIdentifier, functionIdentifier );
         if( node.async ) functionIdentifier.addKind('async');
         if( node.generator ) functionIdentifier.addKind('generator');
@@ -643,6 +798,7 @@ export class BabelProvider extends IdentifiersProvider {
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
         this.processIdentifier( node.imported, parentIdentifier, identifier );
+        this.addKind('variable');
     }
 
     /*
@@ -671,6 +827,7 @@ export class BabelProvider extends IdentifiersProvider {
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
         this.processIdentifier( node.local, parentIdentifier, identifier );
+        identifier.addKind('variable');
     }
 
     /*
@@ -687,6 +844,7 @@ export class BabelProvider extends IdentifiersProvider {
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
         this.processIdentifier( node.imported, parentIdentifier, identifier );
         identifier.getAdditionalDataMap().set( 'local', this.getIdentifierName( node.local ) );
+        identifier.addKind('variable');
     }
 
     /*
@@ -748,9 +906,12 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'Identifier', 'Wrong node type!' );
 
         currentIdentifier.setName( node.name );
+        currentIdentifier.setStartPosition( new Point( node.loc.start.line - 1, node.loc.start.column) );
     }
 
     getIdentifierName( node ) {
+        console.assert( node.type === 'Identifier', 'Wrong node type!' );
+
         return node.name;
     }
 
@@ -1022,9 +1183,41 @@ Class <: Node {
 }
 ClassBody <: Node {
     type: "ClassBody";
-    body: [ MethodDefinition ];
+    body: [ MethodDefinition | PropertyDefinition ];
     loc: SourceLocation | null;
 }
+PropertyDefinition <: Node {
+    type: "PropertyDefinition";
+    key: Expression | PrivateIdentifier;
+    value: Expression | null;
+    computed: boolean;
+    static: boolean;
+}
+PrivateIdentifier <: Node {
+    type: "PrivateIdentifier";
+    name: string;
+}
+MemberExpression {
+    property: Expression | PrivateIdentifier;
+}
+    BabelClassProperty <: PropertyDefinition {
+        type: "ClassProperty";
+        computed: boolean;
+        key: Expression | PrivateIdentifier;
+        static: boolean;
+        value: Expression | null;
+    }
+    BabelClassMethod <: MethodDefinition {
+        type: "ClassMethod";
+        async: boolean;
+        body: Node;
+        computed: boolean;
+        generator: boolean;
+        key: Node;
+        kind: [ "method" ];
+        params: [ Node ];
+        static: boolean;
+    }
 ClassDeclaration <: Class, Declaration {
     type: "ClassDeclaration";
     id: Identifier;

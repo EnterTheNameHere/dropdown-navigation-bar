@@ -126,6 +126,7 @@ export class NavigationBar {
                 this._previousActiveEditor = null;
                 if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
 
+                this._selectedIdentifier = null;
                 this._emitter.emit( 'did-change-active-text-editor' );
             } else if ( this._previousActiveEditor !== textEditor ) {
                 // Different TextEditor is now active
@@ -140,6 +141,7 @@ export class NavigationBar {
                     this._emitter.emit( 'did-change-active-text-editor' );
                 }));
 
+                this._selectedIdentifier = null;
                 this._emitter.emit( 'did-change-active-text-editor' );
             }
             // Same TextEditor. Don't know why it would be fired with same TextEditor though.
@@ -194,15 +196,11 @@ export class NavigationBar {
     }
 
     /**
-     * Returns Identifier provider for given `textEditor`.
+     * Returns IdentifierProvider for given `textEditor` or null if no provider is available for that grammar.
      * @param  {TextEditor} textEditor
-     * @return {IdentifierProvider}
+     * @return {IdentifierProvider|null}
      */
     getProviderForTextEditor( textEditor ) {
-        if( !textEditor ) {
-            throw new Error('textEditor argument must be a valid TextEditor instance!');
-        }
-
         return this._providers.getProviderForTextEditor( textEditor );
     }
 }

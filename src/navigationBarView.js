@@ -4,9 +4,15 @@ import { CompositeDisposable } from 'atom'; // eslint-disable-line import/no-unr
 import { DropdownBoxView } from './dropdownBoxView';
 import { DropdownBoxSettingsButtonView } from './dropdownBoxSettingsButtonView';
 import { Identifier } from './identifier';
+import { EmptyIdentifier } from './emptyIdentifier';
 
-const etch = require('etch');
+import * as etch from 'etch';
+/**
+ * Shorthand for etch.dom
+ */
 const $ = etch.dom;
+
+etch.setScheduler(atom.views);
 
 export class NavigationBarView {
     _navigationBar = null;
@@ -17,6 +23,25 @@ export class NavigationBarView {
         this._subscriptions = new CompositeDisposable();
 
         etch.initialize(this);
+
+        this.refs.leftDropbox.onDidChangeSelected( (event) => {
+            //console.log( 'onDidChangeSelected left', event.item );
+            this.getModel().setSelectedIdentifier( event.item );
+            const pos = event.item.getStartPosition();
+            if( pos ) {
+                this.getModel()._previousActiveEditor.setCursorScreenPosition( pos );
+            }
+        });
+        this.refs.rightDropbox.onDidChangeSelected( (event) => {
+            //console.log( 'onDidChangeSelected right', event.item );
+            this.getModel().setSelectedIdentifier( event.item );
+            const pos = event.item instanceof EmptyIdentifier
+                ? event.item.getEndPosition()
+                : event.item.getStartPosition();
+            if( pos ) {
+                this.getModel()._previousActiveEditor.setCursorScreenPosition( pos );
+            }
+        });
     }
 
     async destroy() {
@@ -33,23 +58,22 @@ export class NavigationBarView {
     }
 
     updateDropdownBoxes() {
-        //console.log('NavigationBarView::updateDropdownBoxes');
-
-        let parentIdentifiers = null;
-        let childrenIdentifiers = null;
+        let parentIdentifiers = new Array();
+        let childrenIdentifiers = new Array();
         let parentSelectedIndex = 0;
         let childrenSelectedIndex = 0;
 
         const textEditor = atom.workspace.getActiveTextEditor();
-        if( textEditor ) {
-            const provider = this.getModel().getProviderForTextEditor( textEditor );
+        const provider = this.getModel().getProviderForTextEditor( textEditor );
+        if( provider ) {
             provider.generateIdentifiers();
-            let selectedIdentifier = this.getModel().getSelectedIdentifier();
-            if( !selectedIdentifier ) selectedIdentifier = provider.getTopScopeIdentifier();
+            const selectedIdentifier = this.getModel().getSelectedIdentifier() ?? provider.getTopScopeIdentifier();
             parentIdentifiers = provider.getIdentifiersForParentsDropbox();
-            childrenIdentifiers = provider.getIdentifiersForChildrenDropbox( selectedIdentifier );
-            parentSelectedIndex = 0;
-            childrenSelectedIndex = 0;
+            if( selectedIdentifier.hasChildren() ) {
+                childrenIdentifiers = provider.getIdentifiersForChildrenDropbox( selectedIdentifier );
+            } else {
+                childrenIdentifiers = provider.getIdentifiersForChildrenDropbox( selectedIdentifier.getParent() );
+            }
 
             // Is selectedIdentifier a parent identifier?
             let index = parentIdentifiers.findIndex( (identifier) => {
@@ -94,19 +118,18 @@ export class NavigationBarView {
                 if( index !== -1 ) {
                     childrenSelectedIndex = index;
                 } else {
-                    // Sh... The selectedIdentifier is not in childrenIdentifiers...
-                    childrenSelectedIndex = 0;
-                    console.error( 'NavigationBarView::updateDropdownBoxes',
-                        'SelectedIdentifier is not found in childrenIdentifiers array!',
-                        selectedIdentifier, parentIdentifiers );
+                    if( selectedIdentifier instanceof EmptyIdentifier ) {
+                        // EmptyIdentifier should be the topmost item
+                        childrenSelectedIndex = 0;
+                    } else {
+                        // Sh... The selectedIdentifier is not in childrenIdentifiers...
+                        childrenSelectedIndex = 0;
+                        console.error( 'NavigationBarView::updateDropdownBoxes',
+                            'SelectedIdentifier is not found in childrenIdentifiers array!',
+                            selectedIdentifier, parentIdentifiers );
+                    }
                 }
             }
-        } else {
-            // No text editor means no identifiers...
-            parentIdentifiers = new Array();
-            childrenIdentifiers = new Array();
-            parentSelectedIndex = 0;
-            childrenSelectedIndex = 0;
         }
 
         const renderItem = ( item ) => {
@@ -126,11 +149,15 @@ export class NavigationBarView {
                 } else {
                     name = item.getName();
                 }
-                return [
-                    item.getKind().map( (kind) => `[${kind}]` ).join(' '),
-                    name,
-                    Array.from( item.getAdditionalDataMap() ).map( (value) => `{${value[0]}=${value[1]}}` ).join(' ')
-                ].join(' ');
+
+                const kinds = item.getKind().map( (kind) => `[${kind}]` ).join(' ');
+                const additionals = Array.from( item.getAdditionalDataMap() ).map( (value) => `{${value[0]}=${value[1]}}` ).join(' ');
+
+                const start = item.getStartPosition();
+                const end = item.getEndPosition();
+                const positions = ` <${start?`${start.row}:${start.column}`:'x:x'}-${end?`${end.row}:${end.column}`:'x:x'}>`;
+
+                return `${(kinds?`${kinds} `:'')}${name}${(additionals?` ${additionals}`:'')}${positions}`;
             }
 
             return '';
