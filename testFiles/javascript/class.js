@@ -49,6 +49,13 @@ class AbstractClass {
         let index = 0;
         while( true ) yield id++;
     }
+
+    get getterSetterProperty() {
+        return this._getterSetterProperty;
+    }
+    set getterSetterProperty( value ) {
+        this._getterSetterProperty = value;
+    }
 }
 
 class ExtendingClass extends AbstractClass {
