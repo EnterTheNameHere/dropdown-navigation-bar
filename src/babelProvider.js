@@ -143,6 +143,14 @@ export class BabelProvider extends IdentifiersProvider {
             'BabelProvider finished',
             this._topScopeIdentifier
         );
+
+        const checkForEmptyKind = ( identifier ) => {
+            for( const child of identifier.getChildren() ) {
+                checkForEmptyKind( child );
+            }
+            console.assert( identifier.getKind().length !== 0, 'Identifier has to have at least one kind!' );
+        };
+        checkForEmptyKind( this._topScopeIdentifier );
     }
 
     /**
@@ -188,6 +196,7 @@ export class BabelProvider extends IdentifiersProvider {
                     || ident.isKind('property')
                     || ident.isKind('unimplemented')
                     || ident.isKind('export all')
+                    || ident.isKind('multiple')
                 ) {
                     return true;
                 }
@@ -495,6 +504,8 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ExportSpecifier', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        identifier.addKind('variable');
+        identifier.addKind('export');
         this.processIdentifier( node.local, parentIdentifier, identifier );
         identifier.getAdditionalDataMap().set( 'exported', this.getIdentifierName( node.exported ) );
     }
@@ -797,8 +808,8 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ImportDefaultSpecifier', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
-        this.processIdentifier( node.imported, parentIdentifier, identifier );
-        this.addKind('variable');
+        this.processIdentifier( node.local, parentIdentifier, identifier );
+        identifier.addKind('variable');
     }
 
     /*

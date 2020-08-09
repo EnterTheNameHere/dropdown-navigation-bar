@@ -35,5 +35,6 @@ export class TopScopeIdentifier extends Identifier {
             parent:             null
         };
         super( options );
+        this.addKind('top scope');
     }
 }
