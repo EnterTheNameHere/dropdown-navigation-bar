@@ -585,17 +585,20 @@ export class BabelProvider extends IdentifiersProvider {
     processClassBody( node, parentIdentifier, currentIdentifier ) {
         console.assert( node.type === 'ClassBody', 'Wrong node type!' );
         console.assert( currentIdentifier !== undefined, 'currentIdentifier in ClassBody cannot be undefined but must point to class Identifier!' );
+        //this.setEndPositionFromNode( node, currentIdentifier );
 
         for( const member of node.body ) {
             switch( member.type ) {
             case 'MethodDefinition':
-            case 'ClassMethod': // That's how it's named in Babel
-                this.processMethodDefinition( member, parentIdentifier, currentIdentifier );
-                break;
+            case 'ClassMethod': { // That's how it's named in Babel
+                const methodIdentifier = this.addNewIdentifier( currentIdentifier );
+                this.processMethodDefinition( member, methodIdentifier );
+            } break;
             case 'PropertyDefinition':
-            case 'ClassProperty': // That's how it's named in Babel
-                this.processPropertyDefinition( member, parentIdentifier, currentIdentifier );
-                break;
+            case 'ClassProperty': { // That's how it's named in Babel
+                const propertyIdentifier = this.addNewIdentifier( currentIdentifier );
+                this.processPropertyDefinition( member, propertyIdentifier );
+            } break;
             default:
                 console.warn( 'BabelProvider::processClassBody: Unknown class member type!', member.type );
                 console.info( 'ClassBody', node );
@@ -634,11 +637,15 @@ export class BabelProvider extends IdentifiersProvider {
             typeParameters: TypeParameterDeclaration | TSTypeParameterDeclaration | Noop | null;
         }
      */
-    processMethodDefinition( node, parentIdentifier, currentIdentifier ) {
+    /**
+     * Processes method definition found in class body.
+     * @param  {object}     node             Method definition estree node.
+     * @param  {Identifier} methodIdentifier Identifier owned by class this method belongs to.
+     */
+    processMethodDefinition( node, methodIdentifier ) {
         console.assert( node.type === 'MethodDefinition' || node.type === 'ClassMethod', 'Wrong node type!' );
-        console.assert( currentIdentifier !== undefined, 'currentIdentifier in class MethodDefinition cannot be undefined but must point to class Identifier!' );
+        console.assert( methodIdentifier !== undefined, 'You must provide methodIdentifier, it won\'t be created for you!' );
 
-        const methodIdentifier = this.addNewIdentifier( currentIdentifier );
         this.setPositionsFromNode( node, methodIdentifier );
         methodIdentifier.addKind( node.kind );
         if( node.computed ) {
@@ -648,7 +655,7 @@ export class BabelProvider extends IdentifiersProvider {
         } else {
             switch( node.key.type ) {
             case 'Identifier':
-                this.processIdentifier( node.key, parentIdentifier, methodIdentifier );
+                this.processIdentifier( node.key, {}, methodIdentifier );
                 break;
             case 'Literal':
                 methodIdentifier.setName('Literal').addKind('unimplemented');
@@ -705,16 +712,20 @@ export class BabelProvider extends IdentifiersProvider {
             property: Expression | PrivateIdentifier;
         }
      */
-    processPropertyDefinition( node, parentIdentifier, currentIdentifier ) {
+    /**
+      * Processes property definition found in class body.
+      * @param  {object}     node               Property definition estree node.
+      * @param  {Identifier} propertyIdentifier Identifier owned by class this property belongs to.
+      */
+    processPropertyDefinition( node, propertyIdentifier ) {
         console.assert( node.type === 'PropertyDefinition' || node.type === 'ClassProperty', 'Wrong node type!' );
-        console.assert( currentIdentifier !== undefined, 'currentIdentifier in class PropertyDefinition cannot be undefined but must point to class Identifier!' );
+        console.assert( propertyIdentifier !== undefined, 'You must provide propertyIdentifier, it won\'t be created for you!' );
 
-        const propertyIdentifier = this.addNewIdentifier( currentIdentifier );
         this.setPositionsFromNode( node, propertyIdentifier );
         propertyIdentifier.addKind('property');
         switch( node.key.type ) {
         case 'Identifier':
-            this.processIdentifier( node.key, parentIdentifier, propertyIdentifier );
+            this.processIdentifier( node.key, {}, propertyIdentifier );
             break;
         case 'StringLiteral':
             propertyIdentifier.setName('StringLiteral').addKind('unimplemented');
@@ -756,10 +767,10 @@ export class BabelProvider extends IdentifiersProvider {
             body: [ Directive | Statement ];
         }
      */
-    processFunctionDeclaration( node, parentIdentifier, currentIdentifier ) {
+    processFunctionDeclaration( node, parentIdentifier ) {
         console.assert( node.type === 'FunctionDeclaration', 'Wrong node type!' );
 
-        const functionIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        const functionIdentifier = this.addNewIdentifier( parentIdentifier );
         functionIdentifier.addKind('function');
         this.setPositionsFromNode( node, functionIdentifier );
         this.processIdentifier( node.id, parentIdentifier, functionIdentifier );
