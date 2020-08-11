@@ -95,6 +95,14 @@ export class DropdownBoxView {
      * @return {Promise}
      */
     update( newProps = {} /*, newChildren = {} */ ) {
+        if( Object.prototype.hasOwnProperty.call( newProps, 'items' ) ) {
+            // New items, so 'reset' selection and highlight.
+            this.highlightedIndex = -1;
+            if( !Object.prototype.hasOwnProperty.call( newProps, 'selectedIndex' ) ) {
+                this.props.selectedIndex = 0;
+            }
+        }
+
         this.props = {...this.props, ...newProps};
         return etch.update(this);
     }
