@@ -1057,7 +1057,8 @@ export class BabelProvider extends IdentifiersProvider {
      * @param  {Identifier} identifier Identifier which we will assing positions to.
      */
     setEndPositionFromNode( node, identifier ) {
-        identifier.setEndPosition( new Point( node.loc.start.line - 1, node.loc.start.column ) );
+        // Babel counts rows from 1
+        identifier.setEndPosition( new Point( node.loc.end.line - 1, node.loc.end.column ) );
     }
 
     /**
