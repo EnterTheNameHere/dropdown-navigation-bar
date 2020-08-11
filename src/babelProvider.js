@@ -429,6 +429,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ExportAllDeclaration', 'Wrong node type!' );
 
         const exportAllIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, exportAllIdentifier );
         if( node.exported ) {
             exportAllIdentifier.setName( this.getIdentifierAsString( node.exported ) );
         } else {
@@ -452,6 +453,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ExportDefaultDeclaration', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         identifier.setName('ExportDefaultDeclaration').addKind('unimplemented');
     }
 
@@ -478,6 +480,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ExportNamedDeclaration', 'Wrong node type!' );
 
         const exportedIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, exportedIdentifier );
         exportedIdentifier.addKind('export');
         if( node.specifiers.length > 0 ) {
             exportedIdentifier.addKind('multiple');
@@ -504,6 +507,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ExportSpecifier', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         identifier.addKind('variable');
         identifier.addKind('export');
         this.processIdentifier( node.local, parentIdentifier, identifier );
@@ -522,8 +526,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'VariableDeclaration', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
-        identifier.setStartPosition( new Point( node.loc.start.line - 1, node.loc.start.column) );
-        identifier.setEndPosition( new Point( node.loc.end.line - 1, node.loc.end.column ) );
+        this.setPositionsFromNode( node, identifier );
         if( node.declarations > 1 ) {
             identifier.addKind('multiple');
             for( const variableDeclarator of node.declarations ) {
@@ -567,8 +570,7 @@ export class BabelProvider extends IdentifiersProvider {
 
         const classIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
         classIdentifier.addKind('class');
-        classIdentifier.setStartPosition( new Point( node.loc.start.line - 1, node.loc.start.column ) );
-        classIdentifier.setEndPosition( new Point( node.loc.end.line - 1, node.loc.end.column ) );
+        this.setPositionsFromNode( node, classIdentifier );
         this.processIdentifier( node.id, parentIdentifier, classIdentifier );
         this.processClassBody( node.body, parentIdentifier, classIdentifier );
     }
@@ -637,6 +639,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( currentIdentifier !== undefined, 'currentIdentifier in class MethodDefinition cannot be undefined but must point to class Identifier!' );
 
         const methodIdentifier = this.addNewIdentifier( currentIdentifier );
+        this.setPositionsFromNode( node, methodIdentifier );
         methodIdentifier.addKind( node.kind );
         if( node.computed ) {
             methodIdentifier.addKind('computed');
@@ -707,6 +710,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( currentIdentifier !== undefined, 'currentIdentifier in class PropertyDefinition cannot be undefined but must point to class Identifier!' );
 
         const propertyIdentifier = this.addNewIdentifier( currentIdentifier );
+        this.setPositionsFromNode( node, propertyIdentifier );
         propertyIdentifier.addKind('property');
         switch( node.key.type ) {
         case 'Identifier':
@@ -757,8 +761,7 @@ export class BabelProvider extends IdentifiersProvider {
 
         const functionIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
         functionIdentifier.addKind('function');
-        functionIdentifier.setStartPosition( new Point( node.loc.start.line - 1, node.loc.start.column) );
-        functionIdentifier.setEndPosition( new Point( node.loc.end.line - 1, node.loc.end.column ) );
+        this.setPositionsFromNode( node, functionIdentifier );
         this.processIdentifier( node.id, parentIdentifier, functionIdentifier );
         if( node.async ) functionIdentifier.addKind('async');
         if( node.generator ) functionIdentifier.addKind('generator');
@@ -777,6 +780,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ImportDeclaration', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         identifier.addKind('import');
         identifier.setName('ImportDeclaration');
         for( const specifier of node.specifiers ) {
@@ -808,6 +812,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ImportDefaultSpecifier', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         this.processIdentifier( node.local, parentIdentifier, identifier );
         identifier.addKind('variable');
     }
@@ -823,6 +828,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ImportExpression', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         identifier.setName('ImportExpression').addKind('unimplemented');
     }
 
@@ -837,6 +843,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ImportNamespaceSpecifier', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         this.processIdentifier( node.local, parentIdentifier, identifier );
         identifier.addKind('variable');
     }
@@ -853,6 +860,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ImportSpecifier', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         this.processIdentifier( node.imported, parentIdentifier, identifier );
         identifier.getAdditionalDataMap().set( 'local', this.getIdentifierName( node.local ) );
         identifier.addKind('variable');
@@ -869,6 +877,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ExpressionStatement', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         identifier.setName('ExpressionStatement').addKind('unimplemented');
     }
 
@@ -917,7 +926,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'Identifier', 'Wrong node type!' );
 
         currentIdentifier.setName( node.name );
-        currentIdentifier.setStartPosition( new Point( node.loc.start.line - 1, node.loc.start.column) );
+        this.setStartPositionFromNode( node, currentIdentifier );
     }
 
     getIdentifierName( node ) {
@@ -937,6 +946,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ArrayPattern', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         identifier.setName( 'ArrayPattern' ).addKind('unimplemented');
     }
 
@@ -952,6 +962,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'AssignmentPattern', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         identifier.setName( 'AssignmentPattern' ).addKind('unimplemented');
     }
 
@@ -969,6 +980,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'MemberExpression', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         identifier.setName( 'MemberExpression' ).addKind('unimplemented');
     }
 
@@ -983,6 +995,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'ObjectPattern', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         identifier.setName( 'ObjectPattern' ).addKind('unimplemented');
     }
 
@@ -997,6 +1010,7 @@ export class BabelProvider extends IdentifiersProvider {
         console.assert( node.type === 'RestElement', 'Wrong node type!' );
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        this.setPositionsFromNode( node, identifier );
         identifier.setName( 'RestElement' ).addKind('unimplemented');
     }
 
@@ -1015,6 +1029,34 @@ export class BabelProvider extends IdentifiersProvider {
         const identifier = new Identifier({ textEditor: this._textEditor, parent: parentIdentifier });
         parentIdentifier.addChild( identifier );
         return identifier;
+    }
+
+    /**
+     * Sets startPosition of `identifier` to start position from given `node`.
+     * @param  {object}     node       AST Babel node
+     * @param  {Identifier} identifier Identifier which we will assing positions to.
+     */
+    setStartPositionFromNode( node, identifier ) {
+        identifier.setStartPosition( new Point( node.loc.start.line - 1, node.loc.start.column ) );
+    }
+
+    /**
+     * Sets endPosition of `identifier` to end position from given `node`.
+     * @param  {object}     node       AST Babel node
+     * @param  {Identifier} identifier Identifier which we will assing positions to.
+     */
+    setEndPositionFromNode( node, identifier ) {
+        identifier.setEndPosition( new Point( node.loc.start.line - 1, node.loc.start.column ) );
+    }
+
+    /**
+     * Sets `identifier`'s startPosition and endPosition to positions from given `node`.
+     * @param  {object}     node       AST Babel node
+     * @param  {Identifier} identifier Identifier which we will assing positions to.
+     */
+    setPositionsFromNode( node, identifier ) {
+        this.setStartPositionFromNode( node, identifier );
+        this.setEndPositionFromNode( node, identifier );
     }
 }
 
