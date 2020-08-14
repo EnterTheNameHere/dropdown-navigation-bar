@@ -78,6 +78,8 @@ export class NavigationBar {
         this._view = atom.views.getView(this);
 
         this.observeActiveTextEditor();
+
+        this._emitter.emit( 'did-initialize', {navigationBar: this} );
     }
 
     /**
@@ -231,5 +233,19 @@ export class NavigationBar {
      */
     getProviderForTextEditor( textEditor ) {
         return this._providers.getProviderForTextEditor( textEditor );
+    }
+
+    /**
+     * Notifies subscriber that NavigationBar finished it's initiation and is ready to be used.
+     *
+     * @param  {function(event: {navigationBar: NavigationBar})} callback Function to invoke when NavigationBar was initialized.
+     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     */
+    onDidInitialize( callback ) {
+        return this._emitter.on( 'did-initialize', callback );
+    }
+
+    getActiveTextEditor() {
+        return this._previousActiveEditor;
     }
 }
