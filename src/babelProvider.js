@@ -50,6 +50,8 @@ export class BabelProvider extends IdentifiersProvider {
             console.assert( identifier.getKind().length !== 0, 'Identifier has to have at least one kind!' );
         };
         checkForEmptyKind( this._topScopeIdentifier );
+
+        this._emitter.emit( 'did-generate-identifiers', this );
     }
 
     /**

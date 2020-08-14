@@ -1,4 +1,5 @@
 
+import { Emitter } from 'atom';
 import { TopScopeIdentifier } from './topScopeIdentifier';
 import { EmptyIdentifier } from './emptyIdentifier';
 
@@ -18,6 +19,12 @@ export class IdentifiersProvider {
     _topScopeIdentifier = null;
 
     /**
+     * Holds Emitter instance used by this InstanceProvider.
+     * @type {Emitter}
+     */
+    _emitter = new Emitter();
+
+    /**
      * Creates new IdentifierProvider for given TextEditor.
      * @param {TextEditor} textEditor
      */
@@ -32,6 +39,8 @@ export class IdentifiersProvider {
 
     /**
      * Makes the Provider generate Identifiers for the TextEditor.
+     *
+     * @emits did-generate-identifiers
      *
      * @abstract
      * You want to override this function when creating custom IdentifiersProvider.
