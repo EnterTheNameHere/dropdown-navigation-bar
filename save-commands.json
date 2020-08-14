@@ -1,5 +1,6 @@
 {
     "commands": [
-        "src/**/*.js : npx babel src --out-dir lib"
+        "src/**/*.js : npm run build",
+        "* : npm run version"
     ]
 }
