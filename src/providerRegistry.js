@@ -8,7 +8,7 @@ export class ProviderRegistry {
     _emitter = new Emitter();
 
     getProviderForTextEditor( textEditor ) {
-        console.log('getProviderForTextEditor');
+        //console.log('getProviderForTextEditor');
         if( !textEditor ) {
             return null;
         }

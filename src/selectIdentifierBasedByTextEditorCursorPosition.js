@@ -18,7 +18,6 @@ export class SelectIdentifierBasedByTextEditorCursorPosition {
     }
 
     initialize() {
-        console.log('initialize');
         if( !this._subscriptions ) this._subscriptions = new CompositeDisposable();
         this._activeEditor = null;
         this._activeEditorSubscriptions = null;
@@ -26,7 +25,6 @@ export class SelectIdentifierBasedByTextEditorCursorPosition {
         this._subscriptions.add(
             this._navigationBar.onDidChangeActiveTextEditor( (event) => {
                 const {textEditor} = event;
-                console.log('onDidChangeActiveTextEditor');
                 this.unregisterListenersForActiveTextEditor();
                 this.setActiveTextEditor( textEditor );
                 this.registerListenersForActiveTextEditor();
@@ -62,7 +60,6 @@ export class SelectIdentifierBasedByTextEditorCursorPosition {
     }
 
     registerListenersForActiveTextEditor() {
-        console.log('registerListenersForActiveTextEditor', this._activeEditor);
         if( !this._activeEditor ) return;
         if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
         this._activeEditorSubscriptions = new CompositeDisposable();
@@ -77,7 +74,6 @@ export class SelectIdentifierBasedByTextEditorCursorPosition {
     }
 
     unregisterListenersForActiveTextEditor() {
-        console.log('unregisterListenersForActiveTextEditor');
         if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
         this._activeEditorSubscriptions = null;
     }
@@ -105,7 +101,6 @@ export class SelectIdentifierBasedByTextEditorCursorPosition {
     }
 
     selectIdentifierUnderPosition( position ) {
-        console.log('selectIdentifierUnderPosition');
         if( !this._activeEditor ) return;
 
         const provider = this._navigationBar.getProviderForTextEditor( this._activeEditor );
