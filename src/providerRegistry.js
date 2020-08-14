@@ -42,6 +42,6 @@ export class ProviderRegistry {
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
     onDidDestroy( callback ) {
-        this._emitter.on( 'did-destroy', callback );
+        return this._emitter.on( 'did-destroy', callback );
     }
 }

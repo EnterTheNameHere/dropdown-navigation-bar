@@ -136,6 +136,6 @@ export class IdentifiersProvider {
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
     onDidGenerateIdentifiers( callback ) {
-        this._emitter.on( 'did-generate-identifiers', callback );
+        return this._emitter.on( 'did-generate-identifiers', callback );
     }
 }
