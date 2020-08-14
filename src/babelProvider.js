@@ -51,7 +51,7 @@ export class BabelProvider extends IdentifiersProvider {
         };
         checkForEmptyKind( this._topScopeIdentifier );
 
-        this._emitter.emit( 'did-generate-identifiers', this );
+        this._emitter.emit( 'did-generate-identifiers', {provider: this} );
     }
 
     /**

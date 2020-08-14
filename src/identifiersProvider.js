@@ -132,7 +132,7 @@ export class IdentifiersProvider {
     /**
      * Notifies subscriber that Identifiers were generated.
      *
-     * @param  {function(source: IdentifiersProvider)} callback Function to invoke when Identifiers were generated.
+     * @param  {function(event: object{provider: IdentifiersProvider})} callback Function to invoke when Identifiers were generated.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
     onDidGenerateIdentifiers( callback ) {
