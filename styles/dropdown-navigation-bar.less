@@ -3,6 +3,7 @@
 // See https://github.com/atom/atom-dark-ui/blob/master/styles/ui-variables.less
 // for a full listing of what's available.
 @import "ui-variables";
+@import "syntax-variables";
 
 .dropdown-navigation-bar {
     display: flex;
@@ -30,14 +31,46 @@
     align-items: center;
 }
 
-.dropdown-box-item {
-    cursor: default;
-    width: 100%;
-}
-
 .dropdown-box-header button {
     border: 0;
     padding: 0 5.5px 0 6px;
+}
+
+.dropdown-box-item {
+    cursor: default;
+    width: 100%;
+    display: flex !important;
+    align-items: baseline;
+
+    .icon {
+        text-align: center;
+        font-weight: bold;
+        width: @component-line-height;
+        line-height: @component-line-height;
+    }
+
+    .name {
+        padding-left: 5px;
+        flex: 2;
+    }
+
+    .debug {
+        padding-right: 5px;
+    }
+
+    .make-type-icon( attribute, @syntax-color-attribute );
+    .make-type-icon( class, @syntax-color-class );
+    .make-type-icon( constant, @syntax-color-constant );
+    .make-type-icon( function, @syntax-color-function );
+    .make-type-icon( constructor, @syntax-color-method );
+    .make-type-icon( import, @syntax-color-import );
+    .make-type-icon( method, @syntax-color-method );
+    .make-type-icon( module, @syntax-color-import );
+    .make-type-icon( package, @syntax-color-import );
+    .make-type-icon( property, @syntax-color-property );
+    .make-type-icon( require, @syntax-color-import );
+    .make-type-icon( import, @syntax-color-import );
+    .make-type-icon( variable, @syntax-color-variable );
 }
 
 .dropdown-box-header .dropdown-box-item {
@@ -61,6 +94,8 @@
 
 .dropdown-box-list.select-list.popover-list .list-group {
     margin: 0;
+    overflow-y: auto;
+    max-height: 400px;
 }
 
 .dropdown-box-item.list-group-item.active {
@@ -70,4 +105,22 @@
 
 .dropdown-navigation-bar-settings-button {
     margin: 0 5px;
+}
+
+.make-type-icon( @type, @color ) {
+    .icon.@{type} {
+        color: @color;
+        background: fadeout( @color, 80% );
+    }
+}
+
+.make-type-icon( @type, @color )
+when( hsvvalue( @color ) - hsvvalue( @overlay-background-color) > -20 )
+ and( hsvvalue( @color ) - hsvvalue( @overlay-background-color) < 20 ) {
+    .icon.@{type} {
+        @corrected-color: contrast( @overlay-background-color, darken( @color, 30% ), lighten( @color, 30% ));
+        
+        color: @corrected-color;
+        background: fadeout( @corrected-color, 80% );
+    }
 }

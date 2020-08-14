@@ -164,7 +164,26 @@ export class NavigationBarView {
                 const end = item.getEndPosition();
                 const positions = ` <${start?`${start.row}:${start.column}`:'x:x'}-${end?`${end.row}:${end.column}`:'x:x'}>`;
 
-                return `${(kinds?`${kinds} `:'')}${name}${(additionals?` ${additionals}`:'')}${positions}`;
+                //return `${(kinds?`${kinds} `:'')}${name}${(additionals?` ${additionals}`:'')}${positions}`;
+                const getIconSpan = () => {
+                    if( item.isKind('const') ) return $.span( {class: 'icon variable'}, 'const' );
+                    if( item.isKind('let') ) return $.span( {class: 'icon variable'}, 'let' );
+                    if( item.isKind('var') ) return $.span( {class: 'icon variable'}, 'var' );
+                    if( item.isKind('class') ) return $.span( {class: 'icon class'}, 'class' );
+                    if( item.isKind('function') ) return $.span( {class: 'icon function'}, 'func' );
+                    if( item.isKind('constructor') ) return $.span( {class: 'icon constructor'}, 'func' );
+                    if( item.isKind('method') ) return $.span( {class: 'icon method'}, 'func' );
+                    if( item.isKind('property') ) return $.span( {class: 'icon property'}, 'prop' );
+                    return $.span( {class: 'icon'}, '' );
+                };
+
+                return [
+                    getIconSpan(),
+                    $.span( {class: 'name'}, name ),
+                    $.span( {class: 'debug'}, kinds ),
+                    $.span( {class: 'debug'}, additionals ),
+                    $.span( {class: 'debug'}, positions ),
+                ];
             }
 
             return '';
