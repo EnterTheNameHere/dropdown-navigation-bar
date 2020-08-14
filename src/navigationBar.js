@@ -99,13 +99,13 @@ export class NavigationBar {
 
         if( this._subscriptions ) this._subscriptions.dispose();
         this._previousActiveEditor = null;
-        this._emitter.emit( 'did-deactivate' );
+        this._emitter.emit( 'did-deactivate', {navigationBar: this} );
     }
 
     /**
      * Notifies subscriber that NavigationBar is deactivated.
      *
-     * @param  {Function} callback Function to invoke when Navigation bar is deactivated.
+     * @param  {function(event: {navigationBar: NavigationBar})} callback Function to invoke when Navigation bar is deactivated.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
     onDidDeactivate( callback ) {
@@ -119,13 +119,13 @@ export class NavigationBar {
         this._active = true;
 
         this.observeActiveTextEditor();
-        this._emitter.emit( 'did-activate' );
+        this._emitter.emit( 'did-activate', {navigationBar: this} );
     }
 
     /**
      * Notifies subscriber that NavigationBar is activated.
      *
-     * @param  {Function} callback Function to invoke when Navigation bar is activated.
+     * @param  {function(event: {navigationBar: NavigationBar})} callback Function to invoke when Navigation bar is activated.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
     onDidActivate( callback ) {
@@ -150,7 +150,7 @@ export class NavigationBar {
                 if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
 
                 this._selectedIdentifier = null;
-                this._emitter.emit( 'did-change-active-text-editor' );
+                this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
             } else if ( this._previousActiveEditor !== textEditor ) {
                 // Different TextEditor is now active
                 this._previousActiveEditor = textEditor;
@@ -160,18 +160,18 @@ export class NavigationBar {
                 this._activeEditorSubscriptions.add( textEditor.onDidSave( () => {
                     const provider = this.getProviderForTextEditor( textEditor );
                     if( provider ) provider.generateIdentifiers();
-                    this._emitter.emit( 'did-change-active-text-editor' );
+                    this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
                 }));
                 this._activeEditorSubscriptions.add( textEditor.onDidChangeGrammar( () => {
                     const provider = this.getProviderForTextEditor( textEditor );
                     if( provider ) provider.generateIdentifiers();
-                    this._emitter.emit( 'did-change-active-text-editor' );
+                    this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
                 }));
 
                 this._selectedIdentifier = null;
                 const provider = this.getProviderForTextEditor( textEditor );
                 if( provider ) provider.generateIdentifiers();
-                this._emitter.emit( 'did-change-active-text-editor' );
+                this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
             }
             // Same TextEditor. Don't know why it would be fired with same TextEditor though.
         }));
@@ -193,13 +193,13 @@ export class NavigationBar {
         if( !this._active ) return;
 
         this._selectedIdentifier = selectedIdentifier;
-        this._emitter.emit( 'did-change-selected-identifier' );
+        this._emitter.emit( 'did-change-selected-identifier', {navigationBar: this, selectedIdentifier: selectedIdentifier} );
     }
 
     /**
      * Notifies subscriber about change of Identifier selected on dropdown boxes.
      *
-     * @param  {Function} callback Function to invoke when selected Identifier changes.
+     * @param  {function(event: {navigationBar: NavigationBar, selectedIdentifier: Identifier})} callback Function to invoke when selected Identifier changes.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
     onDidChangeSelectedIdentifier( callback ) {
@@ -209,7 +209,7 @@ export class NavigationBar {
     /**
      * Notifies subscriber about change of active TextEditor.
      *
-     * @param  {Function} callback Function to invoke when active TextEditor changes.
+     * @param  {function(event: {navigationBar: NavigationBar, textEditor: TextEditor})} callback Function to invoke when active TextEditor changes.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
     onDidChangeActiveTextEditor( callback ) {
