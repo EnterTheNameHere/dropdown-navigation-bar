@@ -2,6 +2,7 @@
 
 import { CompositeDisposable, Emitter } from 'atom'; // eslint-disable-line import/no-unresolved
 import { ProviderRegistry } from './providerRegistry';
+import { SelectIdentifierBasedByTextEditorCursorPosition } from './selectIdentifierBasedByTextEditorCursorPosition';
 
 /**
  * NavigationBar displays two dropdown boxes for current TextEditor,
@@ -70,12 +71,16 @@ export class NavigationBar {
      */
     _providers = new ProviderRegistry();
 
+    _behaviors = new CompositeDisposable();
+
     /**
      * Creates new NavigationBar instance.
      */
     constructor() {
         // Create the UI first
         this._view = atom.views.getView(this);
+
+        this._behaviors.add( new SelectIdentifierBasedByTextEditorCursorPosition(this) );
 
         this.observeActiveTextEditor();
 
@@ -88,6 +93,7 @@ export class NavigationBar {
     destroy() {
         this.getView().destroy();
         this._providers.destroy();
+        this._behaviors.dispose();
         if( this._subscriptions ) this._subscriptions.dispose();
         if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
         this._previousActiveEditor = null;
