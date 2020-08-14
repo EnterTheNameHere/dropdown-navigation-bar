@@ -45,7 +45,7 @@ export class NavigationBarView {
     }
 
     async destroy() {
-        this._subscriptions.destroy();
+        this._subscriptions.dispose();
         await etch.destroy(this);
     }
 
