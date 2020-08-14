@@ -1,6 +1,5 @@
 {
     "commands": [
-        "src/**/*.js : npm run build",
-        "* : npm run version"
+        "src\\**\\*.js : npm run build"
     ]
 }
