@@ -150,6 +150,13 @@ export class NavigationBarView {
                     name = item.getName();
                 }
 
+                if( item.isKind('function') || item.isKind('method') ) {
+                    name += '(';
+                    const paramsPart = item.getChildren().map( (param) => { return param.getName(); } ).join(', ');
+                    name += paramsPart ? ` ${paramsPart} ` : '';
+                    name += ')';
+                }
+
                 const kinds = item.getKind().map( (kind) => `[${kind}]` ).join(' ');
                 const additionals = Array.from( item.getAdditionalDataMap() ).map( (value) => `{${value[0]}=${value[1]}}` ).join(' ');
 

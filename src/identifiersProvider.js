@@ -103,6 +103,8 @@ export class IdentifiersProvider {
      */
     getIdentifierForPosition( position ) {
         const searchInChildren = (parent) => {
+            if( parent.isKind('function') || parent.isKind('method') ) return parent;
+            
             for( const child of parent.getChildren() ) {
                 const startPosition = child.getStartPosition();
                 const endPosition = child.getEndPosition();

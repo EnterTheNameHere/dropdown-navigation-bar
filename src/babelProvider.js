@@ -61,7 +61,7 @@ export class BabelProvider extends IdentifiersProvider {
         if( identifier === null || identifier === undefined ) {
             identifier = this._topScopeIdentifier;
         }
-
+        
         return [
             this._topScopeIdentifier,
             ...identifier.getChildren().filter( (ident) => {
@@ -82,6 +82,10 @@ export class BabelProvider extends IdentifiersProvider {
         }
 
         if( identifier instanceof EmptyIdentifier ) {
+            identifier = identifier.getParent();
+        }
+        
+        if( identifier.isKind('function') || identifier.isKind('method') ) {
             identifier = identifier.getParent();
         }
 
@@ -574,7 +578,12 @@ export class BabelProvider extends IdentifiersProvider {
         node.generator && methodIdentifier.addKind('generator');
         node.optional && methodIdentifier.addKind('optional');
 
-        // TODO: params
+        for( const paramNode of node.params ) {
+            const paramIdentifier = this.addNewIdentifier( methodIdentifier );
+            paramIdentifier.addKind('param');
+            this.processPattern( paramNode, methodIdentifier, paramIdentifier );
+        }
+        
         // TODO: decorators
         // TODO: returnType
         // TODO: typeParameters
@@ -677,7 +686,12 @@ export class BabelProvider extends IdentifiersProvider {
         this.processIdentifier( node.id, parentIdentifier, functionIdentifier );
         if( node.async ) functionIdentifier.addKind('async');
         if( node.generator ) functionIdentifier.addKind('generator');
-        // TODO: params array
+
+        for( const paramNode of node.params ) {
+            const paramIdentifier = this.addNewIdentifier( functionIdentifier );
+            paramIdentifier.addKind('param');
+            this.processPattern( paramNode, functionIdentifier, paramIdentifier );
+        }
     }
 
     /*
@@ -872,10 +886,12 @@ export class BabelProvider extends IdentifiersProvider {
      */
     processAssignmentPattern( node, parentIdentifier, currentIdentifier ) {
         console.assert( node.type === 'AssignmentPattern', 'Wrong node type!' );
-
-        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
-        this.setPositionsFromNode( node, identifier );
-        identifier.setName( 'AssignmentPattern' ).addKind('unimplemented');
+        
+        if( !currentIdentifier ) debugger;
+        
+        this.setPositionsFromNode( node, currentIdentifier );
+        this.processPattern( node.left, parentIdentifier, currentIdentifier );
+        // TODO: get value from right side of AssignmentPattern node...
     }
 
     /*
@@ -921,9 +937,12 @@ export class BabelProvider extends IdentifiersProvider {
     processRestElement( node, parentIdentifier, currentIdentifier ) {
         console.assert( node.type === 'RestElement', 'Wrong node type!' );
 
-        const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
-        this.setPositionsFromNode( node, identifier );
-        identifier.setName( 'RestElement' ).addKind('unimplemented');
+        console.log('restPattern', node);
+        if( !currentIdentifier ) debugger;
+
+        this.setPositionsFromNode( node, currentIdentifier );
+        this.processPattern( node.argument, parentIdentifier, currentIdentifier );
+        currentIdentifier.setName( `...${currentIdentifier.getName()}` );
     }
 
     /**
