@@ -1,7 +1,7 @@
 /* global atom */
 
 import { CompositeDisposable, Emitter } from 'atom'; // eslint-disable-line import/no-unresolved
-import { ProvidersRegistry } from './babelProvider';
+import { ProviderRegistry } from './providerRegistry';
 
 /**
  * NavigationBar displays two dropdown boxes for current TextEditor,
@@ -64,11 +64,11 @@ export class NavigationBar {
 
     /**
      * Holds instance to NavigationBar's providers.
-     * @type {ProvidersRegistry}
+     * @type {ProviderRegistry}
      *
      * @access private
      */
-    _providers = new ProvidersRegistry();
+    _providers = new ProviderRegistry();
 
     /**
      * Creates new NavigationBar instance.
@@ -85,6 +85,7 @@ export class NavigationBar {
      */
     destroy() {
         this.getView().destroy();
+        this._providers.destroy();
         if( this._subscriptions ) this._subscriptions.dispose();
         if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
         this._previousActiveEditor = null;

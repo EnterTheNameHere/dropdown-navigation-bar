@@ -1,112 +1,11 @@
 
-import { TextEditor, Point } from 'atom'; // eslint-disable-line import/no-unresolved, no-unused-vars
-import { TopScopeIdentifier } from './topScopeIdentifier';
+import { TextEditor, Point, CompositeDisposable } from 'atom'; // eslint-disable-line import/no-unresolved, no-unused-vars
 import { Identifier } from './identifier';
 import { EmptyIdentifier } from './emptyIdentifier';
+import { IdentifiersProvider } from './identifiersProvider';
 
 const babelParser = require('@babel/parser');
 // https://github.com/estree/estree
-
-export class ProvidersRegistry {
-    getProviderForTextEditor( textEditor ) {
-        if( !textEditor ) {
-            return null;
-        }
-
-        switch( textEditor.getRootScopeDescriptor().scopes[0] ) {
-        case 'source.js':
-            return new BabelProvider( textEditor );
-        default:
-            return null;
-        }
-    }
-}
-
-export class IdentifiersProvider {
-    /**
-     * Holds TextEditor instance this provider provides Identifiers for.
-     * @type {TextEditor}
-     *
-     * @private
-     */
-    _textEditor = null;
-
-    /**
-     * Holds TopScopeIdentifier for TextEditor this provider provides for.
-     * @type {TopScopeIdentifier}
-     */
-    _topScopeIdentifier = null;
-
-    /**
-     * Creates new IdentifierProvider for given TextEditor.
-     * @param {TextEditor} textEditor
-     */
-    constructor( textEditor ) {
-        if( !textEditor ) {
-            throw new Error('textEditor argument must be valid instance of atom TextEditor!');
-        }
-
-        this._textEditor = textEditor;
-        this._topScopeIdentifier = new TopScopeIdentifier( this._textEditor );
-    }
-
-    /**
-     * Makes the Provider generate Identifiers for the TextEditor.
-     *
-     * @abstract
-     * You want to override this function when creating custom IdentifiersProvider.
-     * Perform parsing and populate the TopScopeIdentifier with Identifiers.
-     */
-    generateIdentifiers() {
-
-    }
-
-    /**
-     * Returns TopScopeIdentifier with all Identifiers found in TextEditor's code.
-     *
-     * @return {TopScopeIdentifier} A TopScopeIdentifier for TextEditor.
-     */
-    getTopScopeIdentifier() {
-        return this._topScopeIdentifier;
-    }
-
-    /**
-     * Returns an array of all Identifiers of given `identifier` which
-     * can have children (eg. classes, namespaces, enums etc.), with
-     * TopScopeIdentifier at the top. TopScopeIdentifier must always
-     * be present in the array, even if Provider is not able to provide
-     * any other Identifiers.
-     *
-     * @param  {Identifier} [identifier] The parent Identifier we're getting children of. TopScopeIdentifier is default.
-     * @return {Array<Identifier>} An array with all parent Identifiers with TopScopeIdentifier on top.
-     * @abstract
-     * You want to override this function when creating custom IdentifiersProvider.
-     * Return Identifiers which belongs to the left dropdown box of NavigationBar - all the parents.
-     */
-    getIdentifiersForParentsDropbox( identifier ) { // eslint-disable-line no-unused-vars
-        return [ this._topScopeIdentifier ];
-    }
-
-    /**
-     * Returns an array of all children (eg. variables, properties, methods etc.)
-     * of the given parent `identifier`, with {@link EmptyIdentifier} at the top.
-     * {@link EmptyIdentifier} must always be present in the array even if `identifier`
-     * itself have no other children.
-     *
-     * @param  {Identifier} [identifier] The parent Identifier we're getting children of. TopScopeIdentifier is default.
-     * @return {Array<Identifier>}
-     * @abstract
-     * You want to override this function when creating custom IdentifiersProvider.
-     * Return Identifiers which belongs to the right dropdown box of NavigationBar - all the children.
-     */
-    getIdentifiersForChildrenDropbox( identifier ) {
-        if( identifier === null || identifier === undefined ) {
-            identifier = this._topScopeIdentifier;
-        }
-
-        return [ new EmptyIdentifier(identifier), ...identifier.getChildren() ];
-    }
-}
 
 /**
  * Provider uses Babel for parsing source code. It handles javascript, typescript and flow.
