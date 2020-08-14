@@ -66,7 +66,7 @@ export class NavigationBarView {
         const textEditor = atom.workspace.getActiveTextEditor();
         const provider = this.getModel().getProviderForTextEditor( textEditor );
         if( provider ) {
-            provider.generateIdentifiers();
+            //provider.generateIdentifiers();
             const selectedIdentifier = this.getModel().getSelectedIdentifier() ?? provider.getTopScopeIdentifier();
             parentIdentifiers = provider.getIdentifiersForParentsDropbox();
             if( selectedIdentifier.hasChildren() ) {
