@@ -99,6 +99,17 @@ export class NavigationBar {
 
         if( this._subscriptions ) this._subscriptions.dispose();
         this._previousActiveEditor = null;
+        this._emitter.emit( 'did-deactivate' );
+    }
+
+    /**
+     * Notifies subscriber that NavigationBar is deactivated.
+     *
+     * @param  {Function} callback Function to invoke when Navigation bar is deactivated.
+     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     */
+    onDidDeactivate( callback ) {
+        return this._emitter.on( 'did-deactivate', callback );
     }
 
     /**
@@ -108,6 +119,17 @@ export class NavigationBar {
         this._active = true;
 
         this.observeActiveTextEditor();
+        this._emitter.emit( 'did-activate' );
+    }
+
+    /**
+     * Notifies subscriber that NavigationBar is activated.
+     *
+     * @param  {Function} callback Function to invoke when Navigation bar is activated.
+     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     */
+    onDidActivate( callback ) {
+        return this._emitter.on( 'did-activate', callback );
     }
 
     /**
