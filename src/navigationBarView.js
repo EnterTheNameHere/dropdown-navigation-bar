@@ -29,7 +29,7 @@ export class NavigationBarView {
             this.getModel().setSelectedIdentifier( event.item );
             const pos = event.item.getStartPosition();
             if( pos ) {
-                this.getModel()._previousActiveEditor.setCursorScreenPosition( pos );
+                this.getModel()._previousActiveEditor.setCursorBufferPosition( pos );
             }
         });
         this.refs.rightDropbox.onDidChangeSelected( (event) => {
@@ -39,7 +39,7 @@ export class NavigationBarView {
                 ? event.item.getEndPosition()
                 : event.item.getStartPosition();
             if( pos ) {
-                this.getModel()._previousActiveEditor.setCursorScreenPosition( pos );
+                this.getModel()._previousActiveEditor.setCursorBufferPosition( pos );
             }
         });
     }
