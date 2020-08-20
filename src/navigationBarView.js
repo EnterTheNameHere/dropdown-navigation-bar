@@ -66,7 +66,6 @@ export class NavigationBarView {
         const textEditor = atom.workspace.getActiveTextEditor();
         const provider = this.getModel().getProviderForTextEditor( textEditor );
         if( provider ) {
-            //provider.generateIdentifiers();
             const selectedIdentifier = this.getModel().getSelectedIdentifier() ?? provider.getTopScopeIdentifier();
             parentIdentifiers = provider.getIdentifiersForParentsDropbox();
             if( selectedIdentifier.hasChildren() ) {
@@ -101,13 +100,13 @@ export class NavigationBarView {
                         parentSelectedIndex = 0;
                         console.error( 'NavigationBarView::updateDropdownBoxes',
                             'SelectedIdentifier\'s parent is not found in parentIdentifiers array!',
-                            parent, parentIdentifiers );
+                            'parent:', parent, 'parentIdentifiers:', parentIdentifiers );
                     }
                 } else {
                     parentSelectedIndex = 0;
                     console.error( 'NavigationBarView::updateDropdownBoxes',
                         'Parent of selectedIdentifier is not a valid Identifier!',
-                        selectedIdentifier );
+                        'selectedIdentifier', selectedIdentifier );
                 }
 
                 // And we need to find child's index too...
@@ -126,7 +125,7 @@ export class NavigationBarView {
                         childrenSelectedIndex = 0;
                         console.error( 'NavigationBarView::updateDropdownBoxes',
                             'SelectedIdentifier is not found in childrenIdentifiers array!',
-                            selectedIdentifier, parentIdentifiers );
+                            'selectedIdentifier', selectedIdentifier, 'parentIdentifier', parentIdentifiers );
                     }
                 }
             }
@@ -164,7 +163,6 @@ export class NavigationBarView {
                 const end = item.getEndPosition();
                 const positions = ` <${start?`${start.row}:${start.column}`:'x:x'}-${end?`${end.row}:${end.column}`:'x:x'}>`;
 
-                //return `${(kinds?`${kinds} `:'')}${name}${(additionals?` ${additionals}`:'')}${positions}`;
                 const getIconSpan = () => {
                     if( item.isKind('const') ) return $.span( {class: 'icon variable'}, 'const' );
                     if( item.isKind('let') ) return $.span( {class: 'icon variable'}, 'let' );
@@ -176,13 +174,28 @@ export class NavigationBarView {
                     if( item.isKind('property') ) return $.span( {class: 'icon property'}, 'prop' );
                     return $.span( {class: 'icon'}, '' );
                 };
+                
+                const getAdditionalKindsSpan = () => {
+                    return item.getKind().map( (kind) => {
+                        if( kind === 'async' ) return $.span( {class: 'keyword async'}, 'async' );
+                        if( kind === 'generator' ) return $.span( {class: 'keyword generator'}, 'generator' );
+                        if( kind === 'export' ) return $.span( {class: 'keyword export'}, 'export' );
+                        if( kind === 'import' ) return $.span( {class: 'keyword import'}, 'import' );
+                        return '';
+                    });
+                };
 
                 return [
                     getIconSpan(),
-                    $.span( {class: 'name'}, name ),
-                    $.span( {class: 'debug'}, kinds ),
-                    $.span( {class: 'debug'}, additionals ),
-                    $.span( {class: 'debug'}, positions ),
+                    $.span( {class: 'name'},
+                        name,
+                        getAdditionalKindsSpan(),
+                        $.span( {class: 'debug'},
+                            kinds,
+                            additionals,
+                            positions
+                        )
+                    )
                 ];
             }
 

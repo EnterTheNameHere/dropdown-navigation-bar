@@ -85,7 +85,12 @@ export class BabelProvider extends IdentifiersProvider {
             identifier = identifier.getParent();
         }
         
-        if( identifier.isKind('function') || identifier.isKind('method') ) {
+        if( identifier.isKind('function')
+            || identifier.isKind('method')
+            || identifier.isKind('constructor')
+            || identifier.isKind('get')
+            || identifier.isKind('set')
+        ) {
             identifier = identifier.getParent();
         }
 
@@ -108,6 +113,44 @@ export class BabelProvider extends IdentifiersProvider {
                 return false;
             })
         ];
+    }
+    
+    /**
+     * @override
+     */
+    getIdentifierForPosition( position ) {
+        const searchInChildren = (parent) => {
+            if( parent.isKind('function')
+                || parent.isKind('method')
+                || parent.isKind('constructor')
+                || parent.isKind('get')
+                || parent.isKind('set')
+            ) return parent;
+            
+            for( const child of parent.getChildren() ) {
+                const startPosition = child.getStartPosition();
+                const endPosition = child.getEndPosition();
+
+                if( startPosition && endPosition ) {
+                    if( startPosition.isGreaterThan( endPosition ) ) {
+                        console.warn('Identifier\'s startPosition is after endPosition!', child );
+                    } else {
+                        if( position.isGreaterThanOrEqual( startPosition )
+                            && position.isLessThanOrEqual( endPosition ) ) {
+                            if( child.hasChildren() ) {
+                                return searchInChildren( child );
+                            }
+
+                            return child;
+                        }
+                    }
+                }
+            }
+
+            return parent;
+        };
+
+        return searchInChildren( this._topScopeIdentifier );
     }
 
     /**

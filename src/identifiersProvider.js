@@ -101,34 +101,8 @@ export class IdentifiersProvider {
      * @param {Point} position Position on TextEditor.
      * @return {Identifier|TopScopeIdentifier} Identifier on given position or TopScopeIdentifier.
      */
-    getIdentifierForPosition( position ) {
-        const searchInChildren = (parent) => {
-            if( parent.isKind('function') || parent.isKind('method') ) return parent;
-            
-            for( const child of parent.getChildren() ) {
-                const startPosition = child.getStartPosition();
-                const endPosition = child.getEndPosition();
-
-                if( startPosition && endPosition ) {
-                    if( startPosition.isGreaterThan( endPosition ) ) {
-                        console.warn('Identifier\'s startPosition is after endPosition!', child );
-                    } else {
-                        if( position.isGreaterThanOrEqual( startPosition )
-                            && position.isLessThanOrEqual( endPosition ) ) {
-                            if( child.hasChildren() ) {
-                                return searchInChildren( child );
-                            }
-
-                            return child;
-                        }
-                    }
-                }
-            }
-
-            return parent;
-        };
-
-        return searchInChildren( this._topScopeIdentifier );
+    getIdentifierForPosition( position ) { // eslint-disable-line no-unused-vars
+        return this._topScopeIdentifier;
     }
 
     /**
