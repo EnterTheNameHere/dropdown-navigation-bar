@@ -153,103 +153,103 @@ export class DisplayIdentifiersOnDropdownBoxes {
                     }
                 }
             }
+        }
             
-            const renderItem = ( item ) => {
-                if( item instanceof Identifier ) {
-                    let name = '';
+        const renderItem = ( item ) => {
+            if( item instanceof Identifier ) {
+                let name = '';
+                
+                if( item.isKind('multiple') ) {
+                    const children = item.getChildren().map( (child) => {
+                        const kinds = child.getKind().map( (kind) => `[${kind}]` ).join(' ');
+                        const additionals = Array.from( child.getAdditionalDataMap() ).map( (value) => {
+                            return `{${value[0]}=${value[1]}}`;
+                        }).join(' ');
+                        const childName = child.getName();
+                        return ( kinds ? `${kinds} ` : '' ) + childName + ( additionals ? ` ${additionals}` : '' );
+                    });
                     
-                    if( item.isKind('multiple') ) {
-                        const children = item.getChildren().map( (child) => {
-                            const kinds = child.getKind().map( (kind) => `[${kind}]` ).join(' ');
-                            const additionals = Array.from( child.getAdditionalDataMap() ).map( (value) => {
-                                return `{${value[0]}=${value[1]}}`;
-                            }).join(' ');
-                            const childName = child.getName();
-                            return ( kinds ? `${kinds} ` : '' ) + childName + ( additionals ? ` ${additionals}` : '' );
-                        });
-                        
-                        name = children.join(' ');
-                    } else {
-                        name = item.getName();
-                    }
-                    
-                    if( item.isKind('function') || item.isKind('method') ) {
-                        name += '(';
-                        const paramsPart = item.getChildren().map( (param) => { return param.getName(); } ).join(', ');
-                        name += paramsPart ? ` ${paramsPart} ` : '';
-                        name += ')';
-                    }
-                    // TODO: get set
-                    
-                    const kinds = item.getKind().map( (kind) => `[${kind}]` ).join(' ');
-                    const additionals = Array.from( item.getAdditionalDataMap() ).map(
-                        (value) => `{${value[0]}=${value[1]}}`
-                    ).join(' ');
-                    
-                    const start = item.getStartPosition();
-                    const end = item.getEndPosition();
-                    const positions = ` <${start?`${start.row}:${start.column}`:'x:x'}-${end?`${end.row}:${end.column}`:'x:x'}>`;
-                    
-                    const getIconSpan = () => {
-                        if( item.isKind('const') ) return $.span( {class: 'icon variable'}, 'const' );
-                        if( item.isKind('let') ) return $.span( {class: 'icon variable'}, 'let' );
-                        if( item.isKind('var') ) return $.span( {class: 'icon variable'}, 'var' );
-                        if( item.isKind('class') ) return $.span( {class: 'icon class'}, 'class' );
-                        if( item.isKind('function') ) return $.span( {class: 'icon function'}, 'func' );
-                        if( item.isKind('constructor') ) return $.span( {class: 'icon constructor'}, 'func' );
-                        if( item.isKind('method') ) return $.span( {class: 'icon method'}, 'func' );
-                        if( item.isKind('property') ) return $.span( {class: 'icon property'}, 'prop' );
-                        return $.span( {class: 'icon'}, '' );
-                    };
-                    
-                    const getAdditionalKindsSpan = () => {
-                        return item.getKind().map( (kind) => {
-                            if( kind === 'async' ) return $.span( {class: 'keyword async'}, 'async' );
-                            if( kind === 'generator' ) return $.span( {class: 'keyword generator'}, 'generator' );
-                            if( kind === 'export' ) return $.span( {class: 'keyword export'}, 'export' );
-                            if( kind === 'import' ) return $.span( {class: 'keyword import'}, 'import' );
-                            return '';
-                        });
-                    };
-                    
-                    return [
-                        getIconSpan(),
-                        $.span( {class: 'name'},
-                            name,
-                            getAdditionalKindsSpan(),
-                            $.span( {class: 'debug'},
-                                kinds,
-                                additionals,
-                                positions
-                            )
-                        )
-                    ];
+                    name = children.join(' ');
+                } else {
+                    name = item.getName();
                 }
                 
-                return '';
-            };
-            
-            const event = { parentIdentifiers: parentIdentifiers, childrenIdentifiers: childrenIdentifiers };
-            
-            const emitFunction = async () => {
-                await this._emitter.emit(
-                    'will-update-dropdown-boxes',
-                    event
-                );
+                if( item.isKind('function') || item.isKind('method') ) {
+                    name += '(';
+                    const paramsPart = item.getChildren().map( (param) => { return param.getName(); } ).join(', ');
+                    name += paramsPart ? ` ${paramsPart} ` : '';
+                    name += ')';
+                }
+                // TODO: get set
                 
-                view.getLeftDropdownBox().update({
-                    items: event.parentIdentifiers,
-                    selectedIndex: parentSelectedIndex,
-                    itemRenderer: renderItem,
-                });
-                view.getRightDropdownBox().update({
-                    items: event.childrenIdentifiers,
-                    selectedIndex: childrenSelectedIndex,
-                    itemRenderer: renderItem,
-                });
-            };
+                const kinds = item.getKind().map( (kind) => `[${kind}]` ).join(' ');
+                const additionals = Array.from( item.getAdditionalDataMap() ).map(
+                    (value) => `{${value[0]}=${value[1]}}`
+                ).join(' ');
+                
+                const start = item.getStartPosition();
+                const end = item.getEndPosition();
+                const positions = ` <${start?`${start.row}:${start.column}`:'x:x'}-${end?`${end.row}:${end.column}`:'x:x'}>`;
+                
+                const getIconSpan = () => {
+                    if( item.isKind('const') ) return $.span( {class: 'icon variable'}, 'const' );
+                    if( item.isKind('let') ) return $.span( {class: 'icon variable'}, 'let' );
+                    if( item.isKind('var') ) return $.span( {class: 'icon variable'}, 'var' );
+                    if( item.isKind('class') ) return $.span( {class: 'icon class'}, 'class' );
+                    if( item.isKind('function') ) return $.span( {class: 'icon function'}, 'func' );
+                    if( item.isKind('constructor') ) return $.span( {class: 'icon constructor'}, 'func' );
+                    if( item.isKind('method') ) return $.span( {class: 'icon method'}, 'func' );
+                    if( item.isKind('property') ) return $.span( {class: 'icon property'}, 'prop' );
+                    return $.span( {class: 'icon'}, '' );
+                };
+                
+                const getAdditionalKindsSpan = () => {
+                    return item.getKind().map( (kind) => {
+                        if( kind === 'async' ) return $.span( {class: 'keyword async'}, 'async' );
+                        if( kind === 'generator' ) return $.span( {class: 'keyword generator'}, 'generator' );
+                        if( kind === 'export' ) return $.span( {class: 'keyword export'}, 'export' );
+                        if( kind === 'import' ) return $.span( {class: 'keyword import'}, 'import' );
+                        return '';
+                    });
+                };
+                
+                return [
+                    getIconSpan(),
+                    $.span( {class: 'name'},
+                        name,
+                        getAdditionalKindsSpan(),
+                        $.span( {class: 'debug'},
+                            kinds,
+                            additionals,
+                            positions
+                        )
+                    )
+                ];
+            }
             
-            emitFunction();
-        }
+            return '';
+        };
+        
+        const event = { parentIdentifiers: parentIdentifiers, childrenIdentifiers: childrenIdentifiers };
+        
+        const emitFunction = async () => {
+            await this._emitter.emit(
+                'will-update-dropdown-boxes',
+                event
+            );
+            
+            view.getLeftDropdownBox().update({
+                items: event.parentIdentifiers,
+                selectedIndex: parentSelectedIndex,
+                itemRenderer: renderItem,
+            });
+            view.getRightDropdownBox().update({
+                items: event.childrenIdentifiers,
+                selectedIndex: childrenSelectedIndex,
+                itemRenderer: renderItem,
+            });
+        };
+        
+        emitFunction();
     }
 }
