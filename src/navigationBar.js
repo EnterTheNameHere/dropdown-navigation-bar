@@ -2,7 +2,10 @@
 
 import { CompositeDisposable, Emitter } from 'atom'; // eslint-disable-line import/no-unresolved
 import { ProviderRegistry } from './providerRegistry';
-import { SelectIdentifierBasedByTextEditorCursorPosition } from './selectIdentifierBasedByTextEditorCursorPosition';
+import { BehaviorManager } from './behaviorManager';
+import { DisplayIdentifiersOnDropdownBoxes } from './behaviors/displayIdentifiersOnDropdownBoxes';
+import { SortIdentifiersByAlphabet } from './behaviors/sortIdentifiersByAlphabet';
+import { SelectIdentifierUnderCursorPosition } from './behaviors/selectIdentifierUnderCursorPosition';
 
 /**
  * NavigationBar displays two dropdown boxes for current TextEditor,
@@ -45,7 +48,7 @@ export class NavigationBar {
      * Holds instance of active TextEditor from last observation.
      * @type {TextEditor}
      */
-    _previousActiveEditor = null;
+    _activeEditor = null;
 
     /**
      * Holds instance of this NavigationBar's emitter.
@@ -71,7 +74,11 @@ export class NavigationBar {
      */
     _providers = new ProviderRegistry();
 
-    _behaviors = new CompositeDisposable();
+    /**
+     * Holds instance of {@link BehaviorManager} providing access for Behaviors.
+     * @type {BehaviorManager}
+     */
+    _behaviorManager = new BehaviorManager(this);
 
     /**
      * Creates new NavigationBar instance.
@@ -79,9 +86,12 @@ export class NavigationBar {
     constructor() {
         // Create the UI first
         this._view = atom.views.getView(this);
-
-        this._behaviors.add( new SelectIdentifierBasedByTextEditorCursorPosition(this) );
-
+        
+        this._behaviorManager.registerBehavior( new SelectIdentifierUnderCursorPosition(this._behaviorManager) );
+        const displayIdentifiers = new DisplayIdentifiersOnDropdownBoxes(this._behaviorManager);
+        this._behaviorManager.registerBehavior( displayIdentifiers );
+        this._behaviorManager.registerBehavior( new SortIdentifiersByAlphabet(this._behaviorManager, displayIdentifiers) );
+        
         this.observeActiveTextEditor();
 
         this._emitter.emit( 'did-initialize', {navigationBar: this} );
@@ -93,10 +103,10 @@ export class NavigationBar {
     destroy() {
         this.getView().destroy();
         this._providers.destroy();
-        this._behaviors.dispose();
+        this._behaviorManager.destroy();
         if( this._subscriptions ) this._subscriptions.dispose();
         if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
-        this._previousActiveEditor = null;
+        this._activeEditor = null;
     }
 
     /**
@@ -106,7 +116,7 @@ export class NavigationBar {
         this._active = false;
 
         if( this._subscriptions ) this._subscriptions.dispose();
-        this._previousActiveEditor = null;
+        this._activeEditor = null;
         this._emitter.emit( 'did-deactivate', {navigationBar: this} );
     }
 
@@ -139,6 +149,14 @@ export class NavigationBar {
     onDidActivate( callback ) {
         return this._emitter.on( 'did-activate', callback );
     }
+    
+    /**
+     * Returns a boolean representing whether NavigationBar is active.
+     * @return {boolean} True means active.
+     */
+    isActive() {
+        return this._active;
+    }
 
     /**
      * Starts observing changes in atom's active TextEditor.
@@ -154,31 +172,37 @@ export class NavigationBar {
             //console.log('NavigationBar::observeActiveTextEditor', textEditor);
             if( textEditor === undefined ) {
                 // No TextEditor is curretly active
-                this._previousActiveEditor = null;
+                this._activeEditor = null;
                 if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
 
                 this._selectedIdentifier = null;
                 this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
-            } else if ( this._previousActiveEditor !== textEditor ) {
+            } else if ( this._activeEditor !== textEditor ) {
                 // Different TextEditor is now active
-                this._previousActiveEditor = textEditor;
+                this._activeEditor = textEditor;
                 if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
 
                 if( !this._activeEditorSubscriptions ) this._activeEditorSubscriptions = new CompositeDisposable();
                 this._activeEditorSubscriptions.add( textEditor.onDidSave( () => {
                     const provider = this.getProviderForTextEditor( textEditor );
+                    console.log('NavigationBar::generateIdentifiers');
                     if( provider ) provider.generateIdentifiers();
+                    console.log('NavigationBar::did-change-active-text-editor');
                     this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
                 }));
                 this._activeEditorSubscriptions.add( textEditor.onDidChangeGrammar( () => {
                     const provider = this.getProviderForTextEditor( textEditor );
+                    console.log('NavigationBar::generateIdentifiers');
                     if( provider ) provider.generateIdentifiers();
+                    console.log('NavigationBar::did-change-active-text-editor');
                     this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
                 }));
 
                 this._selectedIdentifier = null;
                 const provider = this.getProviderForTextEditor( textEditor );
+                console.log('NavigationBar::generateIdentifiers');
                 if( provider ) provider.generateIdentifiers();
+                console.log('NavigationBar::did-change-active-text-editor');
                 this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
             }
             // Same TextEditor. Don't know why it would be fired with same TextEditor though.
@@ -252,6 +276,6 @@ export class NavigationBar {
     }
 
     getActiveTextEditor() {
-        return this._previousActiveEditor;
+        return this._activeEditor;
     }
 }
