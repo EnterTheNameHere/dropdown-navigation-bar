@@ -21,8 +21,9 @@ export class DropdownBoxSettingsButtonView {
 
     render() {
         return $.button({
-            class: 'dropdown-navigation-bar-settings-button btn icon icon-gear',
-            name: 'dropdown-navigation-bar-settings-button'
+            class: 'navigation-bar-settings-button btn icon icon-gear',
+            name: 'navigation-bar-settings-button',
+            id: 'navigation-bar-settings-button'
         });
     }
 }
