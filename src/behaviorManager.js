@@ -120,12 +120,14 @@ export class BehaviorManager {
                     this._activeTextEditor = textEditor;
                     const provider = this.getProviderForActiveTextEditor();
                     
-                    this._subscriptionToOnDidGenerateIdentifiers =
-                        provider.onDidGenerateIdentifiers(
-                            ( event1 ) => {
-                                this._emitter.emit( 'did-generate-identifiers', event1 );
-                            }
-                        );
+                    if( provider ) {
+                        this._subscriptionToOnDidGenerateIdentifiers =
+                            provider.onDidGenerateIdentifiers(
+                                ( event1 ) => {
+                                    this._emitter.emit( 'did-generate-identifiers', event1 );
+                                }
+                            );
+                    }
                                     
                     this._subscriptionToOnDidChangeSelectedIdentifier =
                         this._navigationBar.onDidChangeSelectedIdentifier(
