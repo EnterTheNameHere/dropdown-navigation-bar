@@ -52,15 +52,11 @@ export class DisplayIdentifiersOnDropdownBoxes {
         });
         
         this._behaviorManager.onDidChangeActiveTextEditor( () => {
-            console.log('DisplayIdentifiersOnDropdownBoxes::onDidChangeActiveTextEditor');
             this.updateDropdownBoxes();
         }, this );
         this._behaviorManager.onDidChangeSelectedIdentifier( () => {
-            console.log('DisplayIdentifiersOnDropdownBoxes::onDidChangeSelectedIdentifier');
             this.updateDropdownBoxes();
         }, this );
-        
-        console.log('DisplayIdentifiersOnDropdownBoxes::initialize end');
         this.updateDropdownBoxes();
     }
     
@@ -80,8 +76,6 @@ export class DisplayIdentifiersOnDropdownBoxes {
     }
     
     updateDropdownBoxes() {
-        console.log('DisplayIdentifiersOnDropdownBoxes::updateDropdownBoxes');
-        
         const navigationBar = this._behaviorManager.getNavigationBar();
         const view = this._behaviorManager.getNavigationBarView();
         const editor = this._behaviorManager.getActiveTextEditor();
@@ -238,12 +232,10 @@ export class DisplayIdentifiersOnDropdownBoxes {
             const event = { parentIdentifiers: parentIdentifiers, childrenIdentifiers: childrenIdentifiers };
             
             const emitFunction = async () => {
-                console.log('emitFunction start', event);
                 await this._emitter.emit(
                     'will-update-dropdown-boxes',
                     event
                 );
-                console.log('emitFunction end', event);
                 
                 view.getLeftDropdownBox().update({
                     items: event.parentIdentifiers,
@@ -257,14 +249,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
                 });
             };
             
-            const promiseFunction = async () => {
-                return new Promise( (resolve) => {
-                    emitFunction();
-                    resolve();
-                });
-            };
-            
-            promiseFunction().then( () => { console.log('done'); return true; } ).catch( () => { console.log('rejected'); } );
+            emitFunction();
         }
     }
 }

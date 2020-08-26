@@ -29,7 +29,6 @@ export class SortIdentifiersByAlphabet {
     initialize() {
         this._subscriptions = new CompositeDisposable();
         this._subscriptions.add( this._displayIdentifiersOnDropdownBoxes.onWillUpdateDropdownBoxes( (event) => {
-            console.log('SortIdentifiersByAlphabet::onWillUpdateDropdownBoxes');
             // Sort the identifiers by alphabet
             // What to skip: TopScopeIdentifier, EmptyIdentifier - those are always on top...
             // param kind are not to be sorted!
@@ -63,7 +62,6 @@ export class SortIdentifiersByAlphabet {
                     const firstName = first.getName();
                     const secondName = second.getName();
                     
-                    console.log( 'comparing:', `${firstName} < ${secondName} : ${firstName < secondName}` );
                     if( firstName < secondName ) return -1;
                     if( firstName > secondName ) return 1;
                 }
@@ -73,11 +71,7 @@ export class SortIdentifiersByAlphabet {
             };
             
             event.parentIdentifiers.sort( sortingFunction );
-            console.log( event.childrenIdentifiers );
-            console.log( 'sorting' );
-            console.log( event.childrenIdentifiers.sort( sortingFunction ) );
+            event.childrenIdentifiers.sort( sortingFunction );
         }, this ));
-        
-        console.log('SortIdentifiersByAlphabet::initialize end');
     }
 }

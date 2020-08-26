@@ -101,7 +101,6 @@ export class BehaviorManager {
         this._subscriptionToOnDidChangeActiveTextEditor =
         this._navigationBar.onDidChangeActiveTextEditor(
             ( event ) => {
-                console.log('BehaviorManager::onDidChangeActiveTextEditor');
                 const {textEditor} = event;
                 
                 if( this._subscriptionToOnDidChangeSelectedIdentifier ) {
@@ -124,7 +123,6 @@ export class BehaviorManager {
                     this._subscriptionToOnDidGenerateIdentifiers =
                         provider.onDidGenerateIdentifiers(
                             ( event1 ) => {
-                                console.log('BehaviorManager::onDidGenerateIdentifiers');
                                 this._emitter.emit( 'did-generate-identifiers', event1 );
                             }
                         );
@@ -132,7 +130,6 @@ export class BehaviorManager {
                     this._subscriptionToOnDidChangeSelectedIdentifier =
                         this._navigationBar.onDidChangeSelectedIdentifier(
                             ( event2 ) => {
-                                console.log('BehaviorManager::onDidChangeSelectedIdentifier');
                                 this._emitter.emit( 'did-change-selected-identifier', event2 );
                             }
                         );
@@ -142,7 +139,6 @@ export class BehaviorManager {
             }
         );
         
-        console.log('BehaviorManager::did-navigation-bar-initialize');
         this._emitter.emit( 'did-navigation-bar-initialize', initializeEvent );
     }
     

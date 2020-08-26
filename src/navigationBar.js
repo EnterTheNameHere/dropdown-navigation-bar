@@ -185,24 +185,18 @@ export class NavigationBar {
                 if( !this._activeEditorSubscriptions ) this._activeEditorSubscriptions = new CompositeDisposable();
                 this._activeEditorSubscriptions.add( textEditor.onDidSave( () => {
                     const provider = this.getProviderForTextEditor( textEditor );
-                    console.log('NavigationBar::generateIdentifiers');
                     if( provider ) provider.generateIdentifiers();
-                    console.log('NavigationBar::did-change-active-text-editor');
                     this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
                 }));
                 this._activeEditorSubscriptions.add( textEditor.onDidChangeGrammar( () => {
                     const provider = this.getProviderForTextEditor( textEditor );
-                    console.log('NavigationBar::generateIdentifiers');
                     if( provider ) provider.generateIdentifiers();
-                    console.log('NavigationBar::did-change-active-text-editor');
                     this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
                 }));
 
                 this._selectedIdentifier = null;
                 const provider = this.getProviderForTextEditor( textEditor );
-                console.log('NavigationBar::generateIdentifiers');
                 if( provider ) provider.generateIdentifiers();
-                console.log('NavigationBar::did-change-active-text-editor');
                 this._emitter.emit( 'did-change-active-text-editor', {navigationBar: this, textEditor:textEditor} );
             }
             // Same TextEditor. Don't know why it would be fired with same TextEditor though.

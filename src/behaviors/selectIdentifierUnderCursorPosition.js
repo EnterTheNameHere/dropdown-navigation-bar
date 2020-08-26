@@ -23,7 +23,6 @@ export class SelectIdentifierUnderCursorPosition {
 
         this._subscriptions.add(
             this._behaviorManager.onDidChangeActiveTextEditor( (event) => {
-                console.log('SelectIdentifierUnderCursorPosition::onDidChangeActiveTextEditor');
                 const {textEditor} = event;
                 this.unregisterListenersForActiveTextEditor();
                 this.setActiveTextEditor( textEditor );
@@ -44,11 +43,9 @@ export class SelectIdentifierUnderCursorPosition {
             this.setActiveTextEditor( null );
         }, this ));
         
-        console.log('SelectIdentifierUnderCursorPosition::about to select first time');
         this.setActiveTextEditor( this._behaviorManager.getNavigationBar().getActiveTextEditor() );
         this.registerListenersForActiveTextEditor();
         this.selectIdentifierUnderCursor();
-        console.log('SelectIdentifierUnderCursorPosition::initialize end');
     }
     
     hasToRunBefore() {
