@@ -1,7 +1,6 @@
 
 import { Emitter } from 'atom';
-import { TopScopeIdentifier } from './topScopeIdentifier';
-import { EmptyIdentifier } from './emptyIdentifier';
+import { EmptyIdentifier, TopScopeIdentifier } from './identifiers';
 
 export class IdentifiersProvider {
     /**

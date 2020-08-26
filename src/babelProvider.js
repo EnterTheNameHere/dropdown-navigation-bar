@@ -1,7 +1,6 @@
 
 import { TextEditor, Point, CompositeDisposable } from 'atom'; // eslint-disable-line import/no-unresolved, no-unused-vars
-import { Identifier } from './identifier';
-import { EmptyIdentifier } from './emptyIdentifier';
+import { Identifier, EmptyIdentifier } from './identifiers';
 import { IdentifiersProvider } from './identifiersProvider';
 
 const babelParser = require('@babel/parser');
