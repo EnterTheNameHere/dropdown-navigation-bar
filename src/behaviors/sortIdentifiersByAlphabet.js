@@ -1,3 +1,4 @@
+/* global atom */
 
 import { CompositeDisposable } from 'atom';
 
@@ -10,6 +11,7 @@ export class SortIdentifiersByAlphabet {
     _displayIdentifiersOnDropdownBoxes = null;
     _subscriptions = null;
     _active = false;
+    _behaviorActive = false;
     
     constructor( behaviorManager, displayIdentifiersOnDropdownBoxes ) {
         this._behaviorManager = behaviorManager;
@@ -22,11 +24,16 @@ export class SortIdentifiersByAlphabet {
     }
     
     dispose() {
+        this.saveSettings();
+        
         this._subscriptions.dispose();
         this._subscriptions = null;
     }
     
-    initialize() {
+    activateBehavior() {
+        console.log('activateBehavior');
+        if( this._behaviorActive ) return;
+        
         this._subscriptions = new CompositeDisposable();
         this._subscriptions.add( this._displayIdentifiersOnDropdownBoxes.onWillUpdateDropdownBoxes( (event) => {
             // Sort the identifiers by alphabet
@@ -70,8 +77,112 @@ export class SortIdentifiersByAlphabet {
                 return 0;
             };
             
-            event.parentIdentifiers.sort( sortingFunction );
-            event.childrenIdentifiers.sort( sortingFunction );
+            console.log( 'sortLeft', this.sortLeft, 'sortRight', this.sortRight );
+            
+            if( this.sortLeft ) {
+                event.parentIdentifiers.sort( sortingFunction );
+            }
+            
+            if( this.sortRight ) {
+                event.childrenIdentifiers.sort( sortingFunction );
+            }
+            
+            if( !this.sortLeft && !this.sortRight ) {
+                this.deactivateBehavior();
+            }
         }, this ));
+        
+        this._behaviorActive = true;
+    }
+    
+    deactivateBehavior() {
+        console.log('deactivateBehavior');
+        if( !this._behaviorActive ) return;
+        
+        if( this._subscriptions ) this._subscriptions.dispose();
+        this._subscriptions = null;
+        
+        this._behaviorActive = false;
+    }
+    
+    initialize() {
+        const settings = this.settings();
+        
+        const stepIntoGroup = ( group ) => {
+            for( const item of group.items ) {
+                consumeItem( item );
+            }
+        };
+        
+        const consumeItem = ( item ) => {
+            if( item.type === 'group' ) {
+                stepIntoGroup( item );
+            } else {
+                this[item.property] = atom.config.get( `dropdown-navigation-bar.${item.keyPath}`, item.default );
+                if( this[item.property] ) {
+                    this.activateBehavior();
+                }
+                
+                atom.config.onDidChange( `dropdown-navigation-bar.${item.keyPath}`, ({newValue}) => {
+                    this[item.property] = newValue;
+                    if( this[item.property] ) {
+                        this.activateBehavior();
+                    }
+                    if( !this.sortLeft && !this.sortRight ) {
+                        this.deactivateBehavior();
+                    }
+                    this._behaviorManager.getNavigationBarView().update();
+                });
+            }
+        };
+        
+        for( const aSetting of settings ) {
+            consumeItem( aSetting );
+        }
+    }
+    
+    settings() {
+        return [
+            {
+                type: 'group',
+                desc: 'Sort Identifiers by Alphabet:',
+                items: [
+                    {
+                        shortDesc: 'on the left dropdown box',
+                        keyPath: 'behaviors.sortIdentifiersByAlphabet.sortLeftDropdownBoxActive',
+                        property: 'sortLeft',
+                        default: false,
+                        type: 'checkbox'
+                    },
+                    {
+                        shortDesc: 'on the right dropdown box',
+                        keyPath: 'behaviors.sortIdentifiersByAlphabet.sortRightDropdownBoxActive',
+                        property: 'sortRight',
+                        default: false,
+                        type: 'checkbox'
+                    }
+                ]
+            }
+        ];
+    }
+    
+    saveSettings() {
+        const consumeItem = ( item ) => {
+            if( item.type === 'group' ) {
+                stepIntoGroup( item );
+            }
+            
+            atom.config.set( `dropdown-navigation-bar.${item.keyPath}`, this[item.property] ?? item.default );
+        };
+        
+        const stepIntoGroup = ( group ) => {
+            for( const aSetting of group.items ) {
+                consumeItem( aSetting );
+            }
+        };
+        
+        for( const aSetting of this.settings() ) {
+            consumeItem( aSetting );
+        }
     }
 }

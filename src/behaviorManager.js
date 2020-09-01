@@ -196,6 +196,11 @@ export class BehaviorManager {
         if( this._disposed ) return;
         
         this._behaviors.add( behavior );
+        
+        if( typeof behavior.settings === 'function' ) {
+            this._navigationBar.getView().getSettings().addSettings( behavior.settings() );
+        }
+        
         return this;
     }
     

@@ -3,6 +3,7 @@
 import { CompositeDisposable } from 'atom'; // eslint-disable-line import/no-unresolved
 import { DropdownBoxView } from './dropdownBoxView';
 import { DropdownBoxSettingsButtonView } from './dropdownBoxSettingsButtonView';
+import { NavigationBarSettings } from './navigationBarSettings';
 
 import * as etch from 'etch';
 /**
@@ -19,7 +20,7 @@ export class NavigationBarView {
     constructor( props = {}/*, children = {}*/ ) {
         this.props = props;
         this._subscriptions = new CompositeDisposable();
-
+        
         etch.initialize(this);
     }
 
@@ -41,7 +42,8 @@ export class NavigationBarView {
             { class: 'dropdown-navigation-bar' },
             $(DropdownBoxView, { ref: 'leftDropbox' }),
             $(DropdownBoxView, { ref: 'rightDropbox' }),
-            $(DropdownBoxSettingsButtonView, {})
+            $(DropdownBoxSettingsButtonView, { ref: 'settingsButton', navigationBarView: this }),
+            $(NavigationBarSettings, { ref: 'settings', navigationBarView: this })
         );
     }
 
@@ -70,5 +72,21 @@ export class NavigationBarView {
      */
     getRightDropdownBox() {
         return this.refs.rightDropbox;
+    }
+    
+    /**
+     * Returns instance of {@link DropdownBoxSettingsButtonView} of this NavigationBarView.
+     * @return {DropdownBoxSettingsButtonView} The button view.
+     */
+    getSettingsButton() {
+        return this.refs.settingsButton;
+    }
+    
+    /**
+     * Returns instance of {@link NavigationBarSettings} associated with this NavigationBarView.
+     * @return {NavigationBarSettings} The settings view.
+     */
+    getSettings() {
+        return this.refs.settings;
     }
 }

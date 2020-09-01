@@ -4,7 +4,7 @@ const $ = etch.dom;
 
 export class DropdownBoxSettingsButtonView {
     constructor( props = {}/*, children = {}*/ ) {
-        this.props = props;
+        this._props = props;
 
         etch.initialize(this);
     }
@@ -14,7 +14,7 @@ export class DropdownBoxSettingsButtonView {
     }
 
     update( newProps = {}/*, newChildren = {}*/ ) {
-        this.props = {...this.props, ...newProps};
+        this._props = {...this._props, ...newProps};
 
         return etch.update(this);
     }
@@ -23,7 +23,8 @@ export class DropdownBoxSettingsButtonView {
         return $.button({
             class: 'navigation-bar-settings-button btn icon icon-gear',
             name: 'navigation-bar-settings-button',
-            id: 'navigation-bar-settings-button'
+            id: 'navigation-bar-settings-button',
+            on: { click: (event) => { event.stopPropagation(); this._props.navigationBarView.getSettings().toggle(); } }
         });
     }
 }
