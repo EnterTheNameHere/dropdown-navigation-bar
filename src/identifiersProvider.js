@@ -14,12 +14,16 @@ export class IdentifiersProvider {
     /**
      * Holds TopScopeIdentifier for TextEditor this provider provides for.
      * @type {TopScopeIdentifier}
+     *
+     * @private
      */
     _topScopeIdentifier = null;
 
     /**
      * Holds Emitter instance used by this InstanceProvider.
      * @type {Emitter}
+     *
+     * @private
      */
     _emitter = new Emitter();
 
