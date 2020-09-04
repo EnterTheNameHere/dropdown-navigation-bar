@@ -36,7 +36,7 @@ export class NavigationBarSettings {
         return etch.update(this);
     }
     
-    onEventWhileShown( event ) {
+    onEventWhileShown( ev ) {
         //console.log('onEventWhileShown');
         
         // Safety check: we're here catching input only because
@@ -48,18 +48,18 @@ export class NavigationBarSettings {
             return;
         }
         
-        if( event instanceof MouseEvent ) {
+        if( ev instanceof MouseEvent ) {
             // If click comes from outside of NavigationBarSettings,
             // then default behavior is to close.
-            if( event.path && Array.isArray( event.path )
-            && event.path.includes( this.element ) === false ) {
+            if( ev.path && Array.isArray( ev.path )
+            && ev.path.includes( this.element ) === false ) {
                 this.hide();
             }
-        } else if( event instanceof KeyboardEvent ) {
+        } else if( ev instanceof KeyboardEvent ) {
             // Close on escape, cancel etc.
-            if( event.key === 'Escape'
-            || event.key === 'Cancel' ) {
-                event.stopPropagation();
+            if( ev.key === 'Escape'
+            || ev.key === 'Cancel' ) {
+                ev.stopPropagation();
                 this.hide();
             }
         }
@@ -69,21 +69,21 @@ export class NavigationBarSettings {
         if( !this.isHidden() ) return;
         
         const that = this;
-        const clickFunction = function (event) { that.onEventWhileShown(event); };
-        const keydownFunction = function (event) { that.onEventWhileShown(event); };
-        const touchstart = function (event) { that.onEventWhileShown(event); };
+        const clickFunction = function (clickEvent) { that.onEventWhileShown(clickEvent); };
+        const keydownFunction = function (keydownEvent) { that.onEventWhileShown(keydownEvent); };
+        const touchstartFunction = function (touchstartEvent) { that.onEventWhileShown(touchstartEvent); };
         
         this._whileShownSubscriptions = new CompositeDisposable();
         this._whileShownSubscriptions.add( new Disposable( () => {
             document.removeEventListener( 'click', clickFunction );
             document.removeEventListener( 'keydown', keydownFunction, {capture: true} );
-            document.removeEventListener( 'touchstart', touchstart );
+            document.removeEventListener( 'touchstart', touchstartFunction );
         }));
 
         document.addEventListener( 'click', clickFunction );
         // Need to use capture phase because bubbling phase is stopped somewhere...
         document.addEventListener( 'keydown', keydownFunction, {capture: true} );
-        document.addEventListener( 'touchstart', touchstart );
+        document.addEventListener( 'touchstart', touchstartFunction );
         
         this.update({ hidden: false });
     }
@@ -140,8 +140,8 @@ export class NavigationBarSettings {
                     type: 'checkbox',
                     class: 'input-checkbox',
                     checked: checked,
-                    on: { change: ( event ) => {
-                        atom.config.set( `dropdown-navigation-bar.${item.keyPath}`, event.target.checked );
+                    on: { change: ( changeEvent ) => {
+                        atom.config.set( `dropdown-navigation-bar.${item.keyPath}`, changeEvent.target.checked );
                         this._props.navigationBarView.update();
                     }}
                 }),

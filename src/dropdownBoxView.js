@@ -306,11 +306,11 @@ export class DropdownBoxView {
      * check if either user wants to close dropdown list by cancelling
      * selection, confirming selection or by completely clicking
      * outside of DropdownBox...
-     * @param {Event} event
+     * @param {Event} ev
      *
      * @private
      */
-    onEventWhileDropdownOpened( event ) {
+    onEventWhileDropdownOpened( ev ) {
         // Safety check: we're here catching input only because
         // user have dropdown opened. So let's make sure it
         // is opened before we stop any event propagation...
@@ -320,42 +320,42 @@ export class DropdownBoxView {
             return;
         }
 
-        if( event instanceof MouseEvent ) {
+        if( ev instanceof MouseEvent ) {
             // If click comes from outside of DropdownBox,
             // then default behavior is to cancel and close.
-            if( event.path && Array.isArray( event.path )
-            && event.path.includes( this.element ) === false ) {
+            if( ev.path && Array.isArray( ev.path )
+            && ev.path.includes( this.element ) === false ) {
                 this.cancelSelection();
             }
-        } else if( event instanceof KeyboardEvent ) {
+        } else if( ev instanceof KeyboardEvent ) {
             // Close on escape, cancel etc.
-            if( event.key === 'Escape'
-            || event.key === 'Cancel' ) {
-                event.stopPropagation();
+            if( ev.key === 'Escape'
+            || ev.key === 'Cancel' ) {
+                ev.stopPropagation();
                 this.cancelSelection();
             }
             // Select on enter, accept etc.
-            else if( event.key === 'Enter'
-            || event.key === 'Accept'
-            || event.key === 'Commit'
-            || event.key === 'OK' ) {
-                event.stopPropagation();
+            else if( ev.key === 'Enter'
+            || ev.key === 'Accept'
+            || ev.key === 'Commit'
+            || ev.key === 'OK' ) {
+                ev.stopPropagation();
                 this.confirmSelection();
             }
             // Handle arrow movement
-            else if( event.key === 'ArrowUp' ) {
-                event.stopPropagation();
+            else if( ev.key === 'ArrowUp' ) {
+                ev.stopPropagation();
                 this.highlightPrevious();
-            } else if( event.key === 'ArrowDown' ) {
-                event.stopPropagation();
+            } else if( ev.key === 'ArrowDown' ) {
+                ev.stopPropagation();
                 this.highlightNext();
             }
             // Hoping up and down...
-            else if( event.key === 'PageUp' ) {
-                event.stopPropagation();
+            else if( ev.key === 'PageUp' ) {
+                ev.stopPropagation();
                 this.highlightFirst();
-            } else if( event.key === 'PageDown' ) {
-                event.stopPropagation();
+            } else if( ev.key === 'PageDown' ) {
+                ev.stopPropagation();
                 this.highlightLast();
             }
         }
@@ -372,21 +372,21 @@ export class DropdownBoxView {
         };
 
         const that = this;
-        const clickFunction = function (event) { that.onEventWhileDropdownOpened(event); };
-        const keydownFunction = function (event) { that.onEventWhileDropdownOpened(event); };
-        const touchstart = function (event) { that.onEventWhileDropdownOpened(event); };
+        const clickFunction = function (clickEvent) { that.onEventWhileDropdownOpened(clickEvent); };
+        const keydownFunction = function (keydownEvent) { that.onEventWhileDropdownOpened(keydownEvent); };
+        const touchstartFunction = function (touchstartEvent) { that.onEventWhileDropdownOpened(touchstartEvent); };
 
         this.dropdownSubscriptions = new CompositeDisposable();
         this.dropdownSubscriptions.add( new Disposable( () => {
             document.removeEventListener( 'click', clickFunction );
             document.removeEventListener( 'keydown', keydownFunction, {capture: true} );
-            document.removeEventListener( 'touchstart', touchstart );
+            document.removeEventListener( 'touchstart', touchstartFunction );
         }));
 
         document.addEventListener( 'click', clickFunction );
         // Need to use capture phase because bubbling phase is stopped somewhere...
         document.addEventListener( 'keydown', keydownFunction, {capture: true} );
-        document.addEventListener( 'touchstart', touchstart );
+        document.addEventListener( 'touchstart', touchstartFunction );
 
         this.update(newProps);
         this.emitter.emit( 'did-open-dropdown', new DropdownBoxEvent( this ) );

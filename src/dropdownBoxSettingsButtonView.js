@@ -24,7 +24,12 @@ export class DropdownBoxSettingsButtonView {
             class: 'navigation-bar-settings-button btn icon icon-gear',
             name: 'navigation-bar-settings-button',
             id: 'navigation-bar-settings-button',
-            on: { click: (event) => { event.stopPropagation(); this._props.navigationBarView.getSettings().toggle(); } }
+            on: {
+                click: ( clickEvent ) => {
+                    clickEvent.stopPropagation();
+                    this._props.navigationBarView.getSettings().toggle();
+                }
+            }
         });
     }
 }
