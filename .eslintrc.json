@@ -6,7 +6,7 @@
         "plugin:import/errors",
         "plugin:import/warnings"
     ],
-    "parser": "babel-eslint",
+    "parser": "@babel/eslint-parser",
     "parserOptions": {
         "ecmaVersion": 8,
         "ecmaFeatures": {
@@ -21,7 +21,7 @@
         "es6": true
     },
     "plugins": [
-        "babel",
+        "@babel",
         "brace-rules",
         "compat",
         "import",
@@ -33,7 +33,8 @@
         "array-callback-return": "error",
         "arrow-parens": "error",
         "arrow-spacing": "error",
-        "babel/no-invalid-this": "error",
+        "@babel/no-invalid-this": "error",
+        "@babel/semi": [ "error", "always" ],
         "block-scoped-var": "error",
         "default-case": "error",
         "eqeqeq": "error",
@@ -81,7 +82,6 @@
         "promise/valid-params": [ "off" ],
         "require-unicode-regexp": "error",
         "rest-spread-spacing": [ "error", "never" ],
-        "semi": [ "error", "always" ],
         "symbol-description": "error"
     }
 }
