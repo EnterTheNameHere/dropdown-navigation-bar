@@ -30,6 +30,7 @@
     "scripts": {
         "build": "babel src --out-dir lib",
         "docs": "esdoc",
+        "lint": "eslint src/**",
         "version": "conventional-changelog -o CHANGELOG.md -p eslint && git add CHANGELOG.md"
     },
     "dependencies": {
