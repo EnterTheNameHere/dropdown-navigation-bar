@@ -37,7 +37,7 @@ export class BabelProvider extends IdentifiersProvider {
         this.parse();
         this.processEsTree();
 
-        console.log(
+        console.debug(
             'BabelProvider finished',
             this._topScopeIdentifier
         );
@@ -982,7 +982,7 @@ export class BabelProvider extends IdentifiersProvider {
     processRestElement( node, parentIdentifier, currentIdentifier ) {
         console.assert( node.type === 'RestElement', 'Wrong node type!' );
 
-        console.log('restPattern', node);
+        console.debug('restPattern', node);
         if( !currentIdentifier ) debugger;
 
         this.setPositionsFromNode( node, currentIdentifier );

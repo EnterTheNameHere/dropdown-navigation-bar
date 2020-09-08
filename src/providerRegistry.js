@@ -8,7 +8,6 @@ export class ProviderRegistry {
     _emitter = new Emitter();
 
     getProviderForTextEditor( textEditor ) {
-        //console.log('getProviderForTextEditor');
         if( !textEditor ) {
             return null;
         }
@@ -31,7 +30,7 @@ export class ProviderRegistry {
         }
     }
 
-    destroy() {
+    dispose() {
         this._existingProviderInstances.clear();
     }
 

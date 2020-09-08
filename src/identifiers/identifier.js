@@ -108,7 +108,6 @@ export class Identifier {
      * @throws {Error} if options object is not valid - doesn't have required property set or property is not a valid instance.
      */
     constructor( options ) {
-        //console.log(options);
         if( !options ) throw Error('Identifier\'s constructor is expecting an options object as an argument.');
         if( !options.textEditor ) throw Error('Identifier\'s construction options must have "textEditor" property set to an instance of TextEditor where the Identifier can be found.');
 

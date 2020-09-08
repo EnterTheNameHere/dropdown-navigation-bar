@@ -205,7 +205,7 @@ export class DropdownBoxView {
                 active: ( index === this.getHighlightedIndex() ),
                 eventHandlers:{
                     click: () => { this.confirmSelection(); },
-                    mouseover: () => this.changeHighlightedToIndex(index),
+                    mouseover: () => { this.changeHighlightedToIndex(index); },
                 },
             }, this.renderItem( item ) );
         });
@@ -504,7 +504,7 @@ export class DropdownBoxView {
      * @event {did-cancel-selection}
      */
     onDidCancelSelection( callback ) {
-        this.emitter.on( 'did-cancel-selection', callback );
+        return this.emitter.on( 'did-cancel-selection', callback );
     }
 
     /**
@@ -531,7 +531,7 @@ export class DropdownBoxView {
      * @event {did-confirm-selection}
      */
     onDidConfirmSelection( callback ) {
-        this.emitter.on( 'did-confirm-selection', callback );
+        return this.emitter.on( 'did-confirm-selection', callback );
     }
 
     /**
@@ -561,7 +561,7 @@ export class DropdownBoxView {
      * @event {did-change-selected}
      */
     onDidChangeSelected( callback ) {
-        this.emitter.on( 'did-change-selected', callback );
+        return this.emitter.on( 'did-change-selected', callback );
     }
 
     /**
@@ -664,6 +664,6 @@ export class DropdownBoxView {
      * @event {did-change-highlighted}
      */
     onDidChangeHighlighted( callback ) {
-        this.emitter.on( 'did-change-highlighted', callback );
+        return this.emitter.on( 'did-change-highlighted', callback );
     }
 }

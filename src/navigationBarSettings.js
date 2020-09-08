@@ -37,7 +37,7 @@ export class NavigationBarSettings {
     }
     
     onEventWhileShown( ev ) {
-        //console.log('onEventWhileShown');
+        // console.debug( 'onEventWhileShown', ev );
         
         // Safety check: we're here catching input only because
         // user have settings shown. So let's make sure it

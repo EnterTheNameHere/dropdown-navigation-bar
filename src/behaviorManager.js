@@ -1,47 +1,110 @@
 
+import { CompositeDisposable } from 'atom';
 import { BehaviorManagerEmitter } from './behaviorManagerEmitter';
+import { BehaviorSettingsManager } from './behaviorSettingsManager';
 
+import { logged } from './debug';
+
+export class Behavior {
+    initialize() {}
+    dispose() {}
+    activateBehavior() {}
+    deactivateBehavior() {}
+    settings() {}
+}
+
+/**
+ * Manages {@link Behavior}'s defining how {@link NavigationBar} should behave, like displaying {@link Identifier}s
+ * on it's {@link DropdownBox}es implemented in {@link DisplayIdentifiersOnDropdownBoxes}. Behaviors should use
+ * this class to access {@link NavigationBar}'s and {@link IdentifiersProvider}'s properties and register to their
+ * events.
+ */
 export class BehaviorManager {
+    /**
+     * Holds a custom {@link Emitter} allowing controlled order of event firing.
+     * @type {BehaviorManagerEmitter}
+     */
     _emitter = new BehaviorManagerEmitter();
+    
+    /**
+     * Boolean representing if this BehaviorManager is disposed of.
+     * @type {boolean}
+     */
     _disposed = false;
+    
+    /**
+     * Holds {@link NavigationBar} this BehaviorManager is assigned to.
+     * @type {NavigationBar}
+     */
     _navigationBar = null;
+    
+    /**
+     * Holds {@link Behavior}s registered.
+     * @type {Set}
+     */
     _behaviors = new Set();
     
-    _IdentifiersProviderForActiveTextEditor = null;
+    /**
+     * Holds {@link BehaviorSettingsManager} assigned to this BehaviorManager.
+     * @type {BehaviorSettingsManager}
+     */
+    _settings = new BehaviorSettingsManager();
     
+    /**
+     * Holds subscriptions of BehaviorManager which are alive through this BehaviorManager's life.
+     * @type {CompositeDisposable}
+     */
+    _subscriptions = new CompositeDisposable();
+    
+    /**
+     * Subscription to {@link NavigationBar}'s did-initialize event.
+     * @type {Disposable}
+     */
     _subscriptionToOnNavigationBarInitialize = null;
-    _subscriptionToOnNavigationBarActivate = null;
-    _subscriptionToOnNavigationBarDeactivate = null;
-    _subscriptionToOnDidChangeActiveTextEditor = null;
+    
+    /**
+     * Subscription to active editor's {@link IdentifiersProvider} did-generate-identifiers event. Changes when
+     * Atom's active {@link TextEditor} changes.
+     * @type {Disposable}
+     */
     _subscriptionToOnDidGenerateIdentifiers = null;
+    
+    /**
+     * Subscription to {@NavigationBar}'s did-change-selected-identifier event. Changes when Atom's active
+     * {@link TextEditor} changes.
+     * @type {Disposable}
+     */
     _subscriptionToOnDidChangeSelectedIdentifier = null;
     
+    /**
+     * Creates new instance of BehaviorManager assigned to `navigationBar`.
+     *
+     * @param {NavigationBar} navigationBar NavigationBar instance to which this BehaviorManager will be assigned to.
+     */
     constructor( navigationBar ) {
         this._navigationBar = navigationBar;
         
-        this._subscriptionToOnNavigationBarInitialize
-        = this._navigationBar.onDidInitialize( ( event ) => {
-                this.initialize( event );
+        this._subscriptionToOnNavigationBarInitialize =
+            this._navigationBar.onDidInitialize(( navigationBarInitializeEvent ) => {
+                this.initialize( navigationBarInitializeEvent );
             });
     }
     
     /**
-     * Alias for {@link BehaviorManager#dispose}.
+     * Disposes of all resources owned by the instance of this class.
+     * If object has been disposed of, this method has no effect.
      */
-    destroy() {
-        this.dispose();
-    }
-    
-    /**
-     * Disposes of all resources owned by the instance of this class. Does nothing if object is already disposed of.
-     */
+    @logged
     dispose() {
         if( this._disposed ) return;
         
         this._emitter.dispose();
         
         for( const behavior of this._behaviors ) {
-            if( Object.prototype.hasOwnProperty.call( behavior, 'dispose' ) ) {
+            if( typeof behavior.deactivateBehavior === 'function' ) {
+                behavior.deactivateBehavior();
+            }
+            if( typeof behavior.dispose === 'function' ) {
                 behavior.dispose();
             }
         }
@@ -49,21 +112,6 @@ export class BehaviorManager {
         if( this._subscriptionToOnNavigationBarInitialize ) {
             this._subscriptionToOnNavigationBarInitialize.dispose();
             this._subscriptionToOnNavigationBarInitialize = null;
-        }
-        
-        if( this._subscriptionToOnNavigationBarActivate ) {
-            this._subscriptionToOnNavigationBarActivate.dispose();
-            this._subscriptionToOnNavigationBarActivate = null;
-        }
-        
-        if( this._subscriptionToOnNavigationBarDeactivate ) {
-            this._subscriptionToOnNavigationBarDeactivate.dispose();
-            this._subscriptionToOnNavigationBarDeactivate = null;
-        }
-        
-        if( this._subscriptionToOnDidChangeActiveTextEditor ) {
-            this._subscriptionToOnDidChangeActiveTextEditor.dispose();
-            this._subscriptionToOnDidChangeActiveTextEditor = null;
         }
         
         if( this._subscriptionToOnDidGenerateIdentifiers ) {
@@ -76,32 +124,43 @@ export class BehaviorManager {
             this._subscriptionToOnDidChangeSelectedIdentifier = null;
         }
         
+        this._subscriptions.dispose();
+        this._subscriptions = null;
+        
         this._disposed = true;
     }
     
-    initialize( initializeEvent ) {
+    /**
+     * Initializes BehaviorManager after {@link NavigationBar} finished initialization.
+     * If object has been disposed of, this method has no effect.
+     *
+     * @param {function(ev: {navigationBar: NavigationBar})} navigationBarInitializeEvent
+     *
+     * @private
+     */
+    @logged
+    initialize( navigationBarInitializeEvent ) {
         if( this._disposed ) return;
         
-        this._subscriptionToOnNavigationBarActivate =
-        this._navigationBar.onDidActivate(
-            ( event ) => {
-                console.log('BehaviorManager::onDidActivate');
-                this._emitter.emit( 'did-navigation-bar-activate', event );
-            }
+        this._subscriptions.add(
+            this._navigationBar.onDidActivate(( activateEvent ) => {
+                console.debug('BehaviorManager::onDidActivate');
+                this._emitter.emit( 'did-navigation-bar-activate', activateEvent );
+            })
         );
         
-        this._subscriptionToOnNavigationBarDeactivate =
-        this._navigationBar.onDidDeactivate(
-            ( event ) => {
-                console.log('BehaviorManager::onDidDeactivate');
-                this._emitter.emit( 'did-navigation-bar-deactivate', event );
-            }
+        this._subscriptions.add(
+            this._navigationBar.onDidDeactivate(( deactivateEvent ) => {
+                console.debug('BehaviorManager::onDidDeactivate');
+                this._emitter.emit( 'did-navigation-bar-deactivate', deactivateEvent );
+            })
         );
         
-        this._subscriptionToOnDidChangeActiveTextEditor =
-        this._navigationBar.onDidChangeActiveTextEditor(
-            ( event ) => {
-                const {textEditor} = event;
+        this._subscriptions.add(
+            this._navigationBar.onDidChangeActiveTextEditor(( changeActiveTextEditorEvent ) => {
+                console.debug('BehaviorManager::<anon>onDidChangeActiveTextEditor');
+                
+                const textEditor = changeActiveTextEditorEvent.textEditor;
                 
                 if( this._subscriptionToOnDidChangeSelectedIdentifier ) {
                     this._subscriptionToOnDidChangeSelectedIdentifier.dispose();
@@ -122,83 +181,85 @@ export class BehaviorManager {
                     
                     if( provider ) {
                         this._subscriptionToOnDidGenerateIdentifiers =
-                            provider.onDidGenerateIdentifiers(
-                                ( event1 ) => {
-                                    this._emitter.emit( 'did-generate-identifiers', event1 );
-                                }
-                            );
+                            provider.onDidGenerateIdentifiers(( generateIdentifiersEvent ) => {
+                                console.debug('BehaviorManager::<anon>onDidGenerateIdentifiers');
+                                
+                                this._emitter.emit( 'did-generate-identifiers', generateIdentifiersEvent );
+                            });
                     }
                                     
                     this._subscriptionToOnDidChangeSelectedIdentifier =
-                        this._navigationBar.onDidChangeSelectedIdentifier(
-                            ( event2 ) => {
-                                this._emitter.emit( 'did-change-selected-identifier', event2 );
-                            }
-                        );
+                        this._navigationBar.onDidChangeSelectedIdentifier(( changeSelectedIdentifierEvent ) => {
+                            console.debug('BehaviorManager::<anon>onDidChangeSelectedIdentifier');
+                            
+                            this._emitter.emit( 'did-change-selected-identifier', changeSelectedIdentifierEvent );
+                        });
                 }
                 
-                this._emitter.emit( 'did-change-active-text-editor', event );
-            }
+                this._emitter.emit( 'did-change-active-text-editor', changeActiveTextEditorEvent );
+            })
         );
         
-        this._emitter.emit( 'did-navigation-bar-initialize', initializeEvent );
+        this._emitter.emit( 'did-navigation-bar-initialize', navigationBarInitializeEvent );
     }
     
     /**
-     * Returns atom's currently active {@link TextEditor}. Can be undefined if no
-     * TextEditor is active or BehaviorManager is disposed.
+     * Returns atom's currently active {@link TextEditor} or undefined if no TextEditor is active.
+     *
      * @return {TextEditor|undefined} Currently active TextEditor
      */
+    @logged
     getActiveTextEditor() {
-        if( this._disposed ) return undefined;
-        
         return this._navigationBar.getActiveTextEditor();
     }
     
     /**
-     * Returns IdentifiersProvider for atom's currently active {@link TextEditor}. Can
-     * be null if no {@link TextEditor} is currently active or BehaviorManager is disposed.
-     * @return {IdentifiersProvider|null} IdentifiersProvider for currently active TextEditor
+     * Returns {@link IdentifiersProvider} for atom's currently active {@link TextEditor} or null if no
+     * {@link TextEditor} is active or no {@link IdentifiersProvider} is available.
+     *
+     * @return {IdentifiersProvider|null} IdentifiersProvider for currently active TextEditor or null.
      */
+    @logged
     getProviderForActiveTextEditor() {
-        if( this._disposed ) return null;
-        
         return this._navigationBar.getProviderForTextEditor( this.getActiveTextEditor() );
     }
     
     /**
-     * Returns {@link NavigationBar} this BehaviorManager belongs to.
-     * @return {NavigationBar} NavigationBar
+     * Returns {@link NavigationBar} this BehaviorManager is assigned to.
+     *
+     * @return {NavigationBar} NavigationBar.
      */
+    @logged
     getNavigationBar() {
-        if( this._disposed ) return;
-        
         return this._navigationBar;
     }
     
     /**
-     * Returns {@link NavigationBarView} for NavigationBar this BehaviorManager
-     * belongs to or null if BehaviorManager is disposed.
-     * @return {NavigationBarView|null} View for NavigationBar
+     * Returns {@link NavigationBarView} for {@link NavigationBar} this BehaviorManager is assigned to.
+     *
+     * @return {NavigationBarView} View for NavigationBar.
      */
+    @logged
     getNavigationBarView() {
-        if( this._disposed ) return null;
-        
         return this._navigationBar.getView();
     }
     
     /**
      * Registers behavior instance.
+     * If object has been disposed of, this method has no effect.
+     *
      * @param {object} behavior Instance of object implementing a behavior.
      * @returns {BehaviorManager} Chainable.
      */
+    @logged
     registerBehavior( behavior ) {
-        if( this._disposed ) return;
+        if( this._disposed ) return this;
         
         this._behaviors.add( behavior );
+        this._settings.registerBehavior( behavior );
         
-        if( typeof behavior.settings === 'function' ) {
-            this._navigationBar.getView().getSettings().addSettings( behavior.settings() );
+        if( typeof behavior.activateBehavior === 'function' ) {
+            behavior.activateBehavior();
         }
         
         return this;
@@ -206,48 +267,56 @@ export class BehaviorManager {
     
     /**
      * Unregisters behavior instance.
+     * If object has been disposed of, this method has no effect.
+     *
      * @param  {object} behavior Previously registered behavior.
      * @return {BehaviorManager} Chainable.
      */
+    @logged
     unregisterBehavior( behavior ) {
-        if( this._disposed ) return;
+        if( this._disposed ) return this;
         
+        if( typeof behavior.deactivateBehavior === 'function' ) {
+            behavior.deactivateBehavior();
+        }
+        
+        this._settings.unregisterBehavior( behavior );
         this._behaviors.remove( behavior );
+        
         return this;
     }
     
-    onDidNavigationBarInitialize( callback, behaviorInstance ) {
-        if( this._disposed ) return;
-        
-        if( !behaviorInstance ) {
-            throw new Error('behaviorInstance must be instance of object implementing a behavior!');
-        }
-        
-        return this._emitter.on( 'did-navigation-bar-initialize', callback, behaviorInstance );
+    /**
+     * Notifies subscriber that {@link NavigationBar} was activated.
+     *
+     * @param  {function(callback: function, behaviorInstance: Behavior)} callback Function to invoke when NavigationBar was activated.
+     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     * @throws {Error} If object is already disposed of.
+     */
+    onDidNavigationBarActivate() {
+        throw new Error('onDidNavigationBarActivate is obsolete');
     }
     
-    onDidNavigationBarActivate( callback, behaviorInstance ) {
-        if( this._disposed ) return;
-        
-        if( !behaviorInstance ) {
-            throw new Error('behaviorInstance must be instance of object implementing a behavior!');
-        }
-        
-        return this._emitter.on( 'did-navigation-bar-activate', callback, behaviorInstance );
+    /**
+     * Notifies subscriber that {@link NavigationBar} was deactivated.
+     *
+     * @param  {function(callback: function, behaviorInstance: Behavior)} callback Function to invoke when NavigationBar was deactivated.
+     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     * @throws {Error} If object is already disposed of.
+     */
+    onDidNavigationBarDeactivate() {
+        throw new Error('onDidNavigationBarDeactivate is obsolete');
     }
     
-    onDidNavigationBarDeactivate( callback, behaviorInstance ) {
-        if( this._disposed ) return;
-        
-        if( !behaviorInstance ) {
-            throw new Error('behaviorInstance must be instance of object implementing a behavior!');
-        }
-        
-        return this._emitter.on( 'did-navigation-bar-deactivate', callback, behaviorInstance );
-    }
-    
+    /**
+     * Notifies subscriber that atom's active {@link TextEditor} has changed.
+     *
+     * @param  {function(callback: function, behaviorInstance: Behavior)} callback Function to invoke when atom's active {@link TextEditor} has changed.
+     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     * @throws {Error} If object is already disposed of.
+     */
     onDidChangeActiveTextEditor( callback, behaviorInstance ) {
-        if( this._disposed ) return;
+        if( this._disposed ) throw new Error('Trying to call function of object that is already disposed of!');
         
         if( !behaviorInstance ) {
             throw new Error('behaviorInstance must be instance of object implementing a behavior!');
@@ -256,8 +325,16 @@ export class BehaviorManager {
         return this._emitter.on( 'did-change-active-text-editor', callback, behaviorInstance );
     }
     
+    /**
+     * Notifies subscriber when {@link IdentifiersProvider} of atom's active {@link TextEditor} has
+     * generated {@Identifier}s.
+     *
+     * @param  {function(callback: function, behaviorInstance: Behavior)} callback Function to invoke when {@link IdentifiersProvider} of atom's active {@link TextEditor} has generated {@Identifier}s.
+     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     * @throws {Error} If object is already disposed of.
+     */
     onDidGenerateIdentifiers( callback, behaviorInstance ) {
-        if( this._disposed ) return;
+        if( this._disposed ) throw new Error('Trying to call function of object that is already disposed of!');
         
         if( !behaviorInstance ) {
             throw new Error('behaviorInstance must be instance of object implementing a behavior!');
@@ -266,8 +343,15 @@ export class BehaviorManager {
         return this._emitter.on( 'did-generate-identifiers', callback, behaviorInstance );
     }
     
+    /**
+     * Notifies subscriber when {@link NavigationBar}'s selected {@link Identifier} has changed.
+     *
+     * @param  {function(callback: function, behaviorInstance: Behavior)} callback Function to invoke when {@link NavigationBar}'s selected {@link Identifier} has changed.
+     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     * @throws {Error} If object is already disposed of.
+     */
     onDidChangeSelectedIdentifier( callback, behaviorInstance ) {
-        if( this._disposed ) return;
+        if( this._disposed ) throw new Error('Trying to call function of object that is already disposed of!');
         
         if( !behaviorInstance ) {
             throw new Error('behaviorInstance must be instance of object implementing a behavior!');

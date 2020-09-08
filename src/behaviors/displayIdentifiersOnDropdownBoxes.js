@@ -1,81 +1,156 @@
 /* global atom */
 
+import { CompositeDisposable } from 'atom';
+import { dom as $, default as etch } from 'etch';
 import { BehaviorManagerEmitter } from './../behaviorManagerEmitter';
 import { Identifier, EmptyIdentifier } from './../identifiers';
 
-import * as etch from 'etch';
-/**
- * Shorthand for etch.dom
- */
-const $ = etch.dom;
+import { logged } from './../debug';
 
 etch.setScheduler(atom.views);
 
 export class DisplayIdentifiersOnDropdownBoxes {
     _behaviorManager = null;
-    _active = false;
-    _subscriptions = null;
+    _behaviorActive = false;
+    _subscriptions = new CompositeDisposable();
     _emitter = new BehaviorManagerEmitter();
-
+    _disposed = false;
+    
+    /**
+     * Creates new instance.
+     * @param {BehaviorManager} behaviorManager
+     */
     constructor( behaviorManager ) {
         this._behaviorManager = behaviorManager;
-        this._behaviorManager.onDidNavigationBarInitialize( this.initialize.bind(this), this );
     }
     
-    hasToRunBefore() {
-        return null;
-    }
-    
-    initialize() {
+    /**
+     * Behavior contract function. Called when Behavior can perform it's behavior.
+     * If object has been disposed of, this method has no effect.
+     */
+    @logged
+    activateBehavior() {
+        if( this._disposed ) return;
+        if( this._behaviorActive ) return;
+        
+        this._behaviorActive = true;
+        
         const view = this._behaviorManager.getNavigationBarView();
         const leftDropdownBox = view.getLeftDropdownBox();
         const rightDropdownBox = view.getRightDropdownBox();
         
-        leftDropdownBox.onDidChangeSelected( (event) => {
-            const navigationBar = this._behaviorManager.getNavigationBar();
-            navigationBar.setSelectedIdentifier( event.item );
-            const pos = event.item.getStartPosition();
-            if( pos ) {
-                event.item.getTextEditor().setCursorBufferPosition( pos );
-            }
-        });
+        this._subscriptions.add(
+            leftDropdownBox.onDidChangeSelected( ( ev ) => {
+                const navigationBar = this._behaviorManager.getNavigationBar();
+                navigationBar.setSelectedIdentifier( ev.item );
+                const pos = ev.item.getStartPosition();
+                if( pos ) {
+                    ev.item.getTextEditor().setCursorBufferPosition( pos );
+                }
+            })
+        );
         
-        rightDropdownBox.onDidChangeSelected( (event) => {
-            const navigationBar = this._behaviorManager.getNavigationBar();
-            navigationBar.setSelectedIdentifier( event.item );
-            const pos = event.item instanceof EmptyIdentifier
-                ? event.item.getEndPosition()
-                : event.item.getStartPosition();
-            if( pos ) {
-                event.item.getTextEditor().setCursorBufferPosition( pos );
-            }
-        });
+        this._subscriptions.add(
+            rightDropdownBox.onDidChangeSelected( ( ev ) => {
+                const navigationBar = this._behaviorManager.getNavigationBar();
+                navigationBar.setSelectedIdentifier( ev.item );
+                const pos = ev.item instanceof EmptyIdentifier
+                    ? ev.item.getEndPosition()
+                    : ev.item.getStartPosition();
+                if( pos ) {
+                    ev.item.getTextEditor().setCursorBufferPosition( pos );
+                }
+            })
+        );
         
-        this._behaviorManager.onDidChangeActiveTextEditor( () => {
-            this.updateDropdownBoxes();
-        }, this );
-        this._behaviorManager.onDidChangeSelectedIdentifier( () => {
-            this.updateDropdownBoxes();
-        }, this );
+        this._subscriptions.add(
+            this._behaviorManager.onDidChangeActiveTextEditor( () => {
+                this.updateDropdownBoxes();
+            }, this )
+        );
+        
+        this._subscriptions.add(
+            this._behaviorManager.onDidChangeSelectedIdentifier( () => {
+                this.updateDropdownBoxes();
+            }, this )
+        );
+        
         this.updateDropdownBoxes();
+    }
+    
+    /**
+     * Behavior contract function. Called when Behavior must stop performing it's behavior.
+     * If object has been disposed of, this method has no effect.
+     */
+    @logged
+    deactivateBehavior() {
+        if( this._disposed ) return;
+        if( !this._behaviorActive ) return;
+        
+        this._behaviorActive = false;
+    }
+    
+    /**
+     * Releases resources held by this object.
+     */
+    @logged
+    dispose() {
+        if( this._disposed ) return;
+        
+        this._subscriptions.dispose();
+        this._subscriptions = null;
+        this._emitter.dispose();
+        
+        this._disposed = true;
     }
     
     /**
      * Notifies subscriber that Dropdown Boxes are about to be updated.
      * Useful if you want to change what will Dropdown Boxes show.
-     * @param  {function(parentIdentifiers: Array, childrenIdentifiers: Array)} callback to invoke when DropdownBoxes are about to be updated.
-     * @param  {object}   behaviorInstance Instance of Behavior the callback belongs to. Required in case order of callbacks matter.
-     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     *
+     * @param  {function(parentIdentifiers: Array, childrenIdentifiers: Array)} callback Function to invoke when DropdownBoxes are about to be updated.
+     * @param  {Behavior}                      behaviorInstance Instance of Behavior the callback belongs to. Required in case order of callbacks matter.
+     * @param  {{before: Array, after: Array}} [orderRules]     Rules specifying order in which behaviorInstances should be called.
+     * @return {Disposable}                                     Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
-    onWillUpdateDropdownBoxes( callback, behaviorInstance ) {
+    onWillUpdateDropdownBoxes( callback, behaviorInstance, orderRules ) {
+        if( this._disposed ) throw new Error('Trying to call function of object that is already disposed of!');
+        
         if( !behaviorInstance ) {
             throw new Error('behaviorInstance must be instance of object implementing a behavior!');
         }
         
-        return this._emitter.on( 'will-update-dropdown-boxes', callback, behaviorInstance );
+        return this._emitter.on( 'will-update-dropdown-boxes', callback, behaviorInstance, orderRules );
     }
     
+    /**
+     * Notifies subscriber that {@link NavigationBar}'s {@link DropdownBox}es were updated.
+     * @param  {function()}                    callback         Function to invoke when DropdownBoxes are about to be updated.
+     * @param  {Behavior}                      behaviorInstance Instance of Behavior the callback belongs to. Required in case order of callbacks matter.
+     * @param  {{before: Array, after: Array}} [orderRules]     Rules specifying order in which behaviorInstances should be called.
+     * @return {Disposable}                                     Returns a Disposable on which .dispose() can be called to unsubscribe.
+     */
+    odDidUpdateDropdownBoxes( callback, behaviorInstance, orderRules ) {
+        if( this._disposed ) throw new Error('Trying to call function of object that is already disposed of!');
+        
+        if( !behaviorInstance ) {
+            throw new Error('behaviorInstance must be instance of object implementing a behavior!');
+        }
+        
+        return this._emitter.on( 'did-update-dropdown-boxes', callback, behaviorInstance, orderRules );
+    }
+    
+    /**
+     * Performs update of {@NavigationBar}'s {@link DropdownBox}es.
+     * If object has been disposed of, this method has no effect.
+     *
+     * @emits {will-update-dropdown-boxes}
+     */
+    @logged
     updateDropdownBoxes() {
+        if( this._disposed ) return;
+        if( !this._behaviorActive ) return;
+        
         const navigationBar = this._behaviorManager.getNavigationBar();
         const view = this._behaviorManager.getNavigationBarView();
         const editor = this._behaviorManager.getActiveTextEditor();
@@ -161,7 +236,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
                 
                 if( item.isKind('multiple') ) {
                     const children = item.getChildren().map( (child) => {
-                        const kinds = child.getKind().map( (kind) => `[${kind}]` ).join(' ');
+                        const kinds = child.getKind().map( (kind) => { return `[${kind}]`; } ).join(' ');
                         const additionals = Array.from( child.getAdditionalDataMap() ).map( (value) => {
                             return `{${value[0]}=${value[1]}}`;
                         }).join(' ');
@@ -182,9 +257,9 @@ export class DisplayIdentifiersOnDropdownBoxes {
                 }
                 // TODO: get set
                 
-                const kinds = item.getKind().map( (kind) => `[${kind}]` ).join(' ');
+                const kinds = item.getKind().map( (kind) => { return `[${kind}]`; } ).join(' ');
                 const additionals = Array.from( item.getAdditionalDataMap() ).map(
-                    (value) => `{${value[0]}=${value[1]}}`
+                    (value) => { return `{${value[0]}=${value[1]}}`; }
                 ).join(' ');
                 
                 const start = item.getStartPosition();
@@ -230,26 +305,69 @@ export class DisplayIdentifiersOnDropdownBoxes {
             return '';
         };
         
-        const event = { parentIdentifiers: parentIdentifiers, childrenIdentifiers: childrenIdentifiers };
+        // Event is sent to subscribers allowing them to change the parentIdentifiers and childrenIdentifiers, so after
+        // all subscribers' callbacks have been called, use the these to update dropdown boxes!
+        const willUpdateDropdownBoxesEvent = { parentIdentifiers: parentIdentifiers, childrenIdentifiers: childrenIdentifiers };
         
         const emitFunction = async () => {
             await this._emitter.emit(
                 'will-update-dropdown-boxes',
-                event
+                willUpdateDropdownBoxesEvent
             );
             
             view.getLeftDropdownBox().update({
-                items: event.parentIdentifiers,
+                items: willUpdateDropdownBoxesEvent.parentIdentifiers, // using parentIdentifiers from event is intentional!
                 selectedIndex: parentSelectedIndex,
                 itemRenderer: renderItem,
             });
             view.getRightDropdownBox().update({
-                items: event.childrenIdentifiers,
+                items: willUpdateDropdownBoxesEvent.childrenIdentifiers, // using childrenIdentifiers from event is intentional!
                 selectedIndex: childrenSelectedIndex,
                 itemRenderer: renderItem,
             });
+            
+            this._emitter.emit(
+                'did-update-dropdown-boxes',
+                {}
+            );
         };
         
         emitFunction();
+    }
+    
+    /**
+     * Behavior contract function returning Behavior's settings schema.
+     * @return {object|Array<object>} Schema of Behavior's settings.
+     */
+    @logged
+    settings() {
+        return [
+            {
+                type: 'group',
+                text: 'Display:',
+                items: [
+                    {
+                        type: 'checkbox',
+                        keyPath: 'displayIdentifiersOnDropdownBoxes.showDebug',
+                        text: 'Debug info',
+                        property: 'showDebug',
+                        default: false
+                    }
+                ]
+            }
+        ];
+    }
+    
+    /**
+     * Behavior contract function called when Behavior's settings are changed. Can be used when Behavior needs to
+     * perform update right after settings are changed.
+     * If object has been disposed of, this method has no effect.
+     */
+    @logged
+    settingsUpdated() {
+        if( this._disposed ) return;
+        if( !this.activateBehavior ) return;
+        
+        this.updateDropdownBoxes();
     }
 }

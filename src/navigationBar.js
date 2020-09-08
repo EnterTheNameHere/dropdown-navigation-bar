@@ -5,7 +5,7 @@ import { ProviderRegistry } from './providerRegistry';
 import { BehaviorManager } from './behaviorManager';
 import { DisplayIdentifiersOnDropdownBoxes } from './behaviors/displayIdentifiersOnDropdownBoxes';
 import { SortIdentifiersByAlphabet } from './behaviors/sortIdentifiersByAlphabet';
-import { SelectIdentifierUnderCursorPosition } from './behaviors/selectIdentifierUnderCursorPosition';
+import { SelectIdentifierAtCursorPosition } from './behaviors/selectIdentifierAtCursorPosition';
 
 /**
  * NavigationBar displays two dropdown boxes for current TextEditor,
@@ -87,9 +87,9 @@ export class NavigationBar {
         // Create the UI first
         this._view = atom.views.getView(this);
         
-        this._behaviorManager.registerBehavior( new SelectIdentifierUnderCursorPosition(this._behaviorManager) );
-        const displayIdentifiers = new DisplayIdentifiersOnDropdownBoxes(this._behaviorManager);
+        const displayIdentifiers = new DisplayIdentifiersOnDropdownBoxes( this._behaviorManager );
         this._behaviorManager.registerBehavior( displayIdentifiers );
+        this._behaviorManager.registerBehavior( new SelectIdentifierAtCursorPosition(this._behaviorManager, displayIdentifiers ) );
         this._behaviorManager.registerBehavior( new SortIdentifiersByAlphabet(this._behaviorManager, displayIdentifiers) );
         
         this.observeActiveTextEditor();
@@ -100,10 +100,10 @@ export class NavigationBar {
     /**
      * Releases all resources used by NavigationBar.
      */
-    destroy() {
+    dispose() {
         this.getView().destroy();
-        this._providers.destroy();
-        this._behaviorManager.destroy();
+        this._providers.dispose();
+        this._behaviorManager.dispose();
         if( this._subscriptions ) this._subscriptions.dispose();
         if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
         this._activeEditor = null;
@@ -169,7 +169,6 @@ export class NavigationBar {
 
         if( !this._subscriptions ) this._subscriptions = new CompositeDisposable();
         this._subscriptions.add( atom.workspace.observeActiveTextEditor( (textEditor) => {
-            //console.log('NavigationBar::observeActiveTextEditor', textEditor);
             if( textEditor === undefined ) {
                 // No TextEditor is curretly active
                 this._activeEditor = null;
@@ -266,7 +265,7 @@ export class NavigationBar {
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      */
     onDidInitialize( callback ) {
-        return this._emitter.on( 'did-initialize', callback );
+        return this._emitter.once( 'did-initialize', callback );
     }
 
     getActiveTextEditor() {

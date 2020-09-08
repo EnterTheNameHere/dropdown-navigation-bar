@@ -109,7 +109,7 @@ export class DropdownBoxItemWrapperView {
                 // We don't want prototype chain properties, only user defined.
                 if( Object.prototype.hasOwnProperty.call( this._currentEventHandlers, property ) ) {
                     // Handler should be function...
-                    const handler = this._currentEventHandlers[property];
+                    const handler = this._currentEventHandlers[property]; // Do not silence eslint...
                     if( typeof(handler) === 'function' ) {
                         this.element.addEventListener( property, handler );
                     }
@@ -136,7 +136,7 @@ export class DropdownBoxItemWrapperView {
                 // We don't want prototype chain properties, only user defined.
                 if( Object.prototype.hasOwnProperty.call( this._currentEventHandlers, property ) ) {
                     // Handler should be function...
-                    const handler = this._currentEventHandlers[property];
+                    const handler = this._currentEventHandlers[property]; // Do not silence eslint...
                     if( typeof(handler) === 'function' ) {
                         this.element.removeEventListener( property, handler );
                     }

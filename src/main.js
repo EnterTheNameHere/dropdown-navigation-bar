@@ -16,9 +16,9 @@ class DropdownNavigationBarPackage {
     currentActiveEditor = null;
 
     activate( serialized = {} ) {
+        console.debug( 'DropdownNavigationBarPackage::activate', serialized );
+        
         if( this._active ) return;
-
-        console.log( 'DropdownNavigationBarPackage::activate', serialized );
 
         this.subscriptions = new CompositeDisposable();
         this.navigationBar = new NavigationBar();
@@ -30,25 +30,27 @@ class DropdownNavigationBarPackage {
         });
 
         this.subscriptions.add( atom.commands.add( 'atom-workspace', {
-            'dropdown-navigation-bar:toggle': () => this.toggle(),
+            'dropdown-navigation-bar:toggle': () => { this.toggle(); },
         }));
 
         this._active = true;
     }
 
     deactivate() {
-        console.log( 'DropdownNavigationBarPackage::deactivate' );
+        console.debug( 'DropdownNavigationBarPackage::deactivate' );
+        
         if( !this._active ) return;
 
         this.subscriptions.dispose();
-        this.navigationBar.destroy();
+        this.navigationBar.dispose();
 
         this.toggled = false;
         this._active = false;
     }
 
     toggle() {
-        console.log( 'DropdownNavigationBarPackage::toggle' );
+        console.debug( 'DropdownNavigationBarPackage::toggle' );
+        
         if( !this._active ) return;
 
         if( this._visible ) {
