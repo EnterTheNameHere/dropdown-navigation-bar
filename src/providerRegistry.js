@@ -1,11 +1,10 @@
 
-import { CompositeDisposable, Emitter } from 'atom';
+import { CompositeDisposable } from 'atom';
 import { BabelProvider } from './babelProvider';
 
 export class ProviderRegistry {
     _existingProviderInstances = new Map();
     _subscriptions = new CompositeDisposable();
-    _emitter = new Emitter();
 
     getProviderForTextEditor( textEditor ) {
         if( !textEditor ) {
@@ -32,15 +31,5 @@ export class ProviderRegistry {
 
     dispose() {
         this._existingProviderInstances.clear();
-    }
-
-    /**
-     * Notifies subscriber that ProviderRegistry is destroyed.
-     *
-     * @param  {Function} callback Function to invoke when ProviderRegistry is destroyed.
-     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
-     */
-    onDidDestroy( callback ) {
-        return this._emitter.on( 'did-destroy', callback );
     }
 }
