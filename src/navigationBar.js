@@ -94,14 +94,14 @@ export class NavigationBar {
         
         this.observeActiveTextEditor();
 
-        this._emitter.emit( 'did-initialize', {navigationBar: this} );
+        this._behaviorManager.initialize();
     }
 
     /**
      * Releases all resources used by NavigationBar.
      */
     dispose() {
-        this.getView().destroy();
+        this._view.destroy();
         this._providers.dispose();
         this._behaviorManager.dispose();
         if( this._subscriptions ) this._subscriptions.dispose();
@@ -258,14 +258,8 @@ export class NavigationBar {
         return this._providers.getProviderForTextEditor( textEditor );
     }
 
-    /**
-     * Notifies subscriber that NavigationBar finished it's initiation and is ready to be used.
-     *
-     * @param  {function(event: {navigationBar: NavigationBar})} callback Function to invoke when NavigationBar was initialized.
-     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
-     */
-    onDidInitialize( callback ) {
-        return this._emitter.once( 'did-initialize', callback );
+    onDidInitialize() {
+        throw new Error('onDidInitialize Deprecated');
     }
 
     getActiveTextEditor() {

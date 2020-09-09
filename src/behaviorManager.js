@@ -57,12 +57,6 @@ export class BehaviorManager {
     _subscriptions = new CompositeDisposable();
     
     /**
-     * Subscription to {@link NavigationBar}'s did-initialize event.
-     * @type {Disposable}
-     */
-    _subscriptionToOnNavigationBarInitialize = null;
-    
-    /**
      * Subscription to active editor's {@link IdentifiersProvider} did-generate-identifiers event. Changes when
      * Atom's active {@link TextEditor} changes.
      * @type {Disposable}
@@ -83,11 +77,6 @@ export class BehaviorManager {
      */
     constructor( navigationBar ) {
         this._navigationBar = navigationBar;
-        
-        this._subscriptionToOnNavigationBarInitialize =
-            this._navigationBar.onDidInitialize(( navigationBarInitializeEvent ) => {
-                this.initialize( navigationBarInitializeEvent );
-            });
     }
     
     /**
@@ -107,11 +96,6 @@ export class BehaviorManager {
             if( typeof behavior.dispose === 'function' ) {
                 behavior.dispose();
             }
-        }
-        
-        if( this._subscriptionToOnNavigationBarInitialize ) {
-            this._subscriptionToOnNavigationBarInitialize.dispose();
-            this._subscriptionToOnNavigationBarInitialize = null;
         }
         
         if( this._subscriptionToOnDidGenerateIdentifiers ) {
@@ -139,7 +123,7 @@ export class BehaviorManager {
      * @private
      */
     @logged
-    initialize( navigationBarInitializeEvent ) {
+    initialize() {
         if( this._disposed ) return;
         
         this._subscriptions.add(
@@ -199,8 +183,6 @@ export class BehaviorManager {
                 this._emitter.emit( 'did-change-active-text-editor', changeActiveTextEditorEvent );
             })
         );
-        
-        this._emitter.emit( 'did-navigation-bar-initialize', navigationBarInitializeEvent );
     }
     
     /**
