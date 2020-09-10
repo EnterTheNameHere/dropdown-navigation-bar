@@ -199,10 +199,12 @@ export class DropdownBoxView {
      * @private
      */
     renderListItems() {
+        const selectedIndex = this.getSelectedIndex();
+        const highlightedIndex = this.getHighlightedIndex();
         this.listItems = this.getItems().map( ( item, index ) => {
             return $(DropdownBoxItemWrapperView, {
-                selected: ( index === this.getSelectedIndex() ),
-                active: ( index === this.getHighlightedIndex() ),
+                selected: ( index === selectedIndex ),
+                active: ( index === highlightedIndex ),
                 eventHandlers:{
                     click: () => { this.confirmSelection(); },
                     mouseover: () => { this.changeHighlightedToIndex(index); },
