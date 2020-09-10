@@ -259,7 +259,7 @@ export class DropdownBoxView {
                 return item.element;
             }
             // User can supply object which has it's own render function defined...
-            else if( Object.prototype.hasOwnProperty.call( item, 'render' ) && typeof(item.render) === 'function' ) {
+            else if( typeof(item.render) === 'function' ) {
                 return item.render();
             }
             // User can supply object with text property set...
