@@ -297,14 +297,14 @@ export class BehaviorManager {
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      * @throws {Error} If object is already disposed of.
      */
-    onDidChangeActiveTextEditor( callback, behaviorInstance ) {
+    onDidChangeActiveTextEditor( callback, behaviorInstance, orderRules ) {
         if( this._disposed ) throw new Error('Trying to call function of object that is already disposed of!');
         
         if( !behaviorInstance ) {
             throw new Error('behaviorInstance must be instance of object implementing a behavior!');
         }
         
-        return this._emitter.on( 'did-change-active-text-editor', callback, behaviorInstance );
+        return this._emitter.on( 'did-change-active-text-editor', callback, behaviorInstance, orderRules );
     }
     
     /**
@@ -315,14 +315,14 @@ export class BehaviorManager {
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      * @throws {Error} If object is already disposed of.
      */
-    onDidGenerateIdentifiers( callback, behaviorInstance ) {
+    onDidGenerateIdentifiers( callback, behaviorInstance, orderRules ) {
         if( this._disposed ) throw new Error('Trying to call function of object that is already disposed of!');
         
         if( !behaviorInstance ) {
             throw new Error('behaviorInstance must be instance of object implementing a behavior!');
         }
         
-        return this._emitter.on( 'did-generate-identifiers', callback, behaviorInstance );
+        return this._emitter.on( 'did-generate-identifiers', callback, behaviorInstance, orderRules );
     }
     
     /**
@@ -332,13 +332,13 @@ export class BehaviorManager {
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      * @throws {Error} If object is already disposed of.
      */
-    onDidChangeSelectedIdentifier( callback, behaviorInstance ) {
+    onDidChangeSelectedIdentifier( callback, behaviorInstance, orderRules ) {
         if( this._disposed ) throw new Error('Trying to call function of object that is already disposed of!');
         
         if( !behaviorInstance ) {
             throw new Error('behaviorInstance must be instance of object implementing a behavior!');
         }
         
-        return this._emitter.on( 'did-change-selected-identifier', callback, behaviorInstance );
+        return this._emitter.on( 'did-change-selected-identifier', callback, behaviorInstance, orderRules );
     }
 }
