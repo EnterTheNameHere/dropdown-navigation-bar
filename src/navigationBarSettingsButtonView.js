@@ -2,7 +2,7 @@
 const etch = require('etch');
 const $ = etch.dom;
 
-export class DropdownBoxSettingsButtonView {
+export class NavigationBarSettingsButtonView {
     constructor( props = {}/*, children = {}*/ ) {
         this._props = props;
 

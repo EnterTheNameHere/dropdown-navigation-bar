@@ -2,8 +2,8 @@
 
 import { CompositeDisposable } from 'atom'; // eslint-disable-line import/no-unresolved
 import { DropdownBoxView } from './dropdownBoxView';
-import { DropdownBoxSettingsButtonView } from './dropdownBoxSettingsButtonView';
-import { NavigationBarSettings } from './navigationBarSettings';
+import { NavigationBarSettingsButtonView } from './navigationBarSettingsButtonView';
+import { NavigationBarSettingsView } from './navigationBarSettingsView';
 
 import * as etch from 'etch';
 /**
@@ -42,8 +42,8 @@ export class NavigationBarView {
             { class: 'dropdown-navigation-bar' },
             $(DropdownBoxView, { ref: 'leftDropbox' }),
             $(DropdownBoxView, { ref: 'rightDropbox' }),
-            $(DropdownBoxSettingsButtonView, { ref: 'settingsButton', navigationBarView: this }),
-            $(NavigationBarSettings, { ref: 'settings', navigationBarView: this })
+            $(NavigationBarSettingsButtonView, { ref: 'settingsButton', navigationBarView: this }),
+            $(NavigationBarSettingsView, { ref: 'settings', navigationBarView: this })
         );
     }
 

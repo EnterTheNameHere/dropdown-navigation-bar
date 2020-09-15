@@ -5,7 +5,7 @@ import { dom as $, default as etch } from 'etch';
 
 etch.setScheduler(atom.views);
 
-export class NavigationBarSettings {
+export class NavigationBarSettingsView {
     _itemsList = new Array();
     _whileShownSubscriptions = null;
     
