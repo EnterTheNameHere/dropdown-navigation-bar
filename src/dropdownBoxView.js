@@ -85,7 +85,8 @@ export class DropdownBoxView {
     }
 
     /**
-     * Updates the state of DropdownBox.
+     * Updates the state of DropdownBox. Does not fire any event.
+     * Etch framework function implementation.
      *
      * @param {Object}                                 [props]               - Component (etch) props object. Set properties you want to change.
      * @param {Array<Object>}                          [props.items]         - An array of items to populate DropdownBox.
@@ -109,6 +110,7 @@ export class DropdownBoxView {
 
     /**
      * Releases all resources and Elements of DropdownBox.
+     * Etch framework function implementation.
      *
      * @return {Promise}
      */
@@ -119,6 +121,7 @@ export class DropdownBoxView {
     /**
      * Returns Element representing visual part of DropdownBox
      * component ready to add into HTML page DOM.
+     * Etch framework function implementation.
      *
      * @return {Element}
      */
