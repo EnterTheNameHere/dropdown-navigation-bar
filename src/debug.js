@@ -14,18 +14,35 @@ log4js.configure({
     }
 });
 
-export function logged( element ) {
-    const originalFunction = element.descriptor.value;
+/**
+ * Javascript class function decorator to log entry end leave of function.
+ *
+ * @param  {Function} classFunctionElement Function to decorate.
+ * @return {Function}
+ *
+ * @example```
+class Example {
+    @logged
+    functionToBeLogged() {
+        // doing something here...
+    }
+}```
+ */
+export function logged( classFunctionElement ) {
+    // We want only methods
+    if( !classFunctionElement.kind || classFunctionElement.kind !== 'method' ) return classFunctionElement;
+    
+    const originalFunction = classFunctionElement.descriptor.value;
     
     const decoratedFunction = function (...args) {
         // Here this will point to decorated class instance...
-        log4js.getLogger('@logged').info( `IN  ${this.constructor.name}::${element.key}` ); // eslint-disable-line @babel/no-invalid-this
+        log4js.getLogger('@logged').info( `ENTERING ${this.constructor.name}::${classFunctionElement.key}` ); // eslint-disable-line @babel/no-invalid-this
         const returnValue = originalFunction.call(this, ...args); // eslint-disable-line @babel/no-invalid-this
-        log4js.getLogger('@logged').info( `OUT ${this.constructor.name}::${element.key}` ); // eslint-disable-line @babel/no-invalid-this
+        log4js.getLogger('@logged').info( `LEAVING  ${this.constructor.name}::${classFunctionElement.key}` ); // eslint-disable-line @babel/no-invalid-this
         return returnValue;
     };
     
-    element.descriptor.value = decoratedFunction;
+    classFunctionElement.descriptor.value = decoratedFunction;
     
-    return element;
+    return classFunctionElement;
 }
