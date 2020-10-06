@@ -46,19 +46,25 @@ export class NavigationBar {
 
     /**
      * Holds instance of this NavigationBar's view.
-     * @type {NavigationBarView},
+     * @type {NavigationBarView|undefined},
      *
      * @private
      */
-    _view = null;
+    _view = undefined;
 
     /**
      * Holds instance of active TextEditor from last observation.
-     * @type {TextEditor}
+     * @type {TextEditor|undefined}
      *
      * @private
      */
-    _activeEditor = null;
+    _activeEditor = undefined;
+    
+    /**
+     * Holds instance of {@link InstanceProvider} for atom's active TextEditor.
+     * @type {InstanceProvider|null}
+     */
+    _providerForActiveTextEditor = null;
 
     /**
      * Holds instance of this NavigationBar's emitter.
@@ -70,7 +76,7 @@ export class NavigationBar {
 
     /**
      * Holds currently selected Identifier on Dropdown boxes.
-     * @type {Identifier}
+     * @type {Identifier|null}
      *
      * @private
      */
@@ -99,14 +105,15 @@ export class NavigationBar {
         // Create the UI first
         this._view = atom.views.getView(this);
         
+        // Activate but don't notify
+        this.activateWithoutEvent();
+        
+        // Make UI interactive
+        this._behaviorManager.initialize();
         const displayIdentifiersBehavior = new DisplayIdentifiersOnDropdownBoxes( this._behaviorManager );
         this._behaviorManager.registerBehavior( displayIdentifiersBehavior );
         this._behaviorManager.registerBehavior( new SelectIdentifierAtCursorPosition( this._behaviorManager, displayIdentifiersBehavior ) );
         this._behaviorManager.registerBehavior( new SortIdentifiersByAlphabet( this._behaviorManager, displayIdentifiersBehavior) );
-        
-        this.registerObserveActiveTextEditor();
-
-        this._behaviorManager.initialize();
     }
 
     /**
@@ -142,12 +149,7 @@ export class NavigationBar {
     deactivate() {
         // Running while object is already disposed of won't hurt...
         
-        this._active = false;
-
-        this.unregisterObserveActiveTextEditor();
-        this._activeEditor = null;
-        this._activeEditorProvider = null;
-        this._selectedIdentifier = null;
+        this.deactivateWithoutEvent();
         
         if( this._disposed ) return; // We don't want to emit event if we're disposed of...
         this._emitter.emit( 'did-deactivate', { navigationBar: this } );
@@ -164,19 +166,33 @@ export class NavigationBar {
         
         return this._emitter.on( 'did-deactivate', callback );
     }
-
+    
+    /**
+     * @private
+     * Implementation
+     */
+    deactivateWithoutEvent() {
+        // Running while object is already disposed of won't hurt...
+        
+        this._active = false;
+        
+        this.unregisterOnDidChangeSelected();
+        this.unregisterObserveActiveTextEditor();
+        this._activeEditor = undefined;
+        this._providerForActiveTextEditor = null;
+        this._selectedIdentifier = null;
+    }
+    
     /**
      * Activates NavigationBar, resuming it's functionality.
      * If object has been disposed of, this method has no effect.
+     * @fires {did-activate}
      */
     activate() {
         if( this._disposed ) return;
         this._active = true;
         
-        this._selectedIdentifier = null;
-        this._activeEditor = atom.workspace.getActiveTextEditor();
-        this._activeEditorProvider = this.getProviderForTextEditor( this._activeEditor );
-        this.registerObserveActiveTextEditor();
+        this.activateWithoutEvent();
         
         this._emitter.emit( 'did-activate', { navigationBar: this } );
     }
@@ -191,6 +207,21 @@ export class NavigationBar {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
         
         return this._emitter.on( 'did-activate', callback );
+    }
+    
+    /**
+     * @private
+     * Implementation
+     */
+    activateWithoutEvent() {
+        if( this._disposed ) return;
+        this._active = true;
+        
+        this._activeEditor = atom.workspace.getActiveTextEditor();
+        this._providerForActiveTextEditor = this.getProviderForTextEditor( this._activeEditor );
+        this._selectedIdentifier = null;
+        this.registerObserveActiveTextEditor();
+        this.registerOnDidChangeSelected();
     }
     
     /**
@@ -212,7 +243,52 @@ export class NavigationBar {
     }
     
     /**
-     * Unregisters listeners registered with {@link this#registerObserveActiveTextEditor}.
+     * Starts observing changes in atom's active TextEditor.
+     * If object has been disposed of, this method has no effect.
+     *
+     * @private
+     */
+    registerObserveActiveTextEditor() {
+        if( this._disposed ) return;
+        if( !this._active ) return;
+        
+        this._observeActiveTextEditorSubscription = atom.workspace.observeActiveTextEditor( (textEditor) => {
+            if( textEditor === undefined ) {
+                // No TextEditor is curretly active
+                this._activeEditor = undefined;
+                this._providerForActiveTextEditor = null;
+                this._selectedIdentifier = null;
+                
+                if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
+                this._activeEditorSubscriptions = null;
+
+                this._emitter.emit( 'did-change-active-text-editor', { navigationBar: this, textEditor: textEditor } );
+            } else if ( this._activeEditor !== textEditor ) {
+                // Different TextEditor is now active
+                this._activeEditor = textEditor;
+                this._providerForActiveTextEditor = this.getProviderForTextEditor( textEditor );
+                this._selectedIdentifier = null;
+                
+                if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
+                this._activeEditorSubscriptions = new CompositeDisposable();
+                
+                this._activeEditorSubscriptions.add( textEditor.onDidSave( () => {
+                    if( this._providerForActiveTextEditor ) this._providerForActiveTextEditor.generateIdentifiers();
+                }));
+                this._activeEditorSubscriptions.add( textEditor.onDidChangeGrammar( () => {
+                    if( this._providerForActiveTextEditor ) this._providerForActiveTextEditor.generateIdentifiers();
+                }));
+
+                
+                if( this._providerForActiveTextEditor ) this._providerForActiveTextEditor.generateIdentifiers();
+                this._emitter.emit( 'did-change-active-text-editor', { navigationBar: this, textEditor: textEditor } );
+            }
+            // Same TextEditor. Don't know why it would be fired with same TextEditor though.
+        });
+    }
+    
+    /**
+     * Unregisters listeners registered with {@link #registerObserveActiveTextEditor}.
      *
      * @private
      */
@@ -231,52 +307,45 @@ export class NavigationBar {
     }
     
     /**
-     * Starts observing changes in atom's active TextEditor.
+     * Registers listeners for `did-change-selected` event with NavigationBar'S {@link DropdownBox}es.
      * If object has been disposed of, this method has no effect.
      *
      * @private
      */
-    registerObserveActiveTextEditor() {
+    @logged
+    registerOnDidChangeSelected() {
         if( this._disposed ) return;
         if( !this._active ) return;
         
-        this._observeActiveTextEditorSubscription = atom.workspace.observeActiveTextEditor( (textEditor) => {
-            if( textEditor === undefined ) {
-                // No TextEditor is curretly active
-                this._activeEditor = null;
-                this._activeEditorProvider = null;
-                this._selectedIdentifier = null;
-                
-                if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
-                this._activeEditorSubscriptions = null;
-
-                this._emitter.emit( 'did-change-active-text-editor', { navigationBar: this, textEditor: textEditor } );
-            } else if ( this._activeEditor !== textEditor ) {
-                // Different TextEditor is now active
-                this._activeEditor = textEditor;
-                this._activeEditorProvider = this.getProviderForTextEditor( textEditor );
-                this._selectedIdentifier = null;
-                
-                if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
-                this._activeEditorSubscriptions = new CompositeDisposable();
-                
-                this._activeEditorSubscriptions.add( textEditor.onDidSave( () => {
-                    if( this._activeEditorProvider ) this._activeEditorProvider.generateIdentifiers();
-                }));
-                this._activeEditorSubscriptions.add( textEditor.onDidChangeGrammar( () => {
-                    if( this._activeEditorProvider ) this._activeEditorProvider.generateIdentifiers();
-                }));
-
-                
-                if( this._activeEditorProvider ) this._activeEditorProvider.generateIdentifiers();
-                this._emitter.emit( 'did-change-active-text-editor', { navigationBar: this, textEditor: textEditor } );
-            }
-            // Same TextEditor. Don't know why it would be fired with same TextEditor though.
-        });
+        const leftDropdownBox = this._view.getLeftDropdownBox();
+        const rightDropdownBox = this._view.getRightDropdownBox();
+        
+        this._subscriptionsToOnDidChangeSelected = new CompositeDisposable();
+        this._subscriptionsToOnDidChangeSelected.add( leftDropdownBox.onDidChangeSelected( (evnt) => {
+            this.setSelectedIdentifier( evnt.item );
+        }));
+        this._subscriptionsToOnDidChangeSelected.add( rightDropdownBox.onDidChangeSelected( (evnt) => {
+            this.setSelectedIdentifier( evnt.item );
+        }));
+    }
+    
+    /**
+     * Unregisters listeners registered with {@link this#registerOnDidChangeSelected}.
+     *
+     * @private
+     */
+    unregisterOnDidChangeSelected() {
+        // Won't hurt running even when object is already disposed of...
+        
+        if( this._subscriptionsToOnDidChangeSelected ) {
+            this._subscriptionsToOnDidChangeSelected.dispose();
+        }
+        this._subscriptionsToOnDidChangeSelected = null;
     }
 
     /**
-     * Returns currently selected {@link Identifier} on NavigationBar's {@link DropdownBox}es. Is *null* if none is selected.
+     * Returns currently selected {@link Identifier} on NavigationBar's {@link DropdownBox}es.
+     * If none is selected, returns *null*.
      *
      * @return {Identifier|null} Selected identifier.
      */
@@ -287,11 +356,13 @@ export class NavigationBar {
     }
 
     /**
-     * Sets `selectedIdentifier` as the selected {@link Identifier} on NavigationBar's {@link DropdownBox}es. Can be
-     * *null* to select none.
+     * Sets `selectedIdentifier` as the selected {@link Identifier} on NavigationBar's {@link DropdownBox}es.
+     * Pass *null* to select none.
      * If object has been disposed of, this method has no effect.
      *
      * @param {Identifier|null} selectedIdentifier
+     *
+     * @fires {did-change-selected-identifier}
      */
     setSelectedIdentifier( selectedIdentifier ) {
         if( this._disposed ) return;
@@ -302,7 +373,7 @@ export class NavigationBar {
     }
 
     /**
-     * Notifies subscriber about change of Identifier selected on dropdown boxes.
+     * Notifies subscriber about change of {@link Identifier} selected on dropdown boxes.
      *
      * @param  {function(event: {navigationBar: NavigationBar, selectedIdentifier: Identifier})} callback Function to invoke when selected Identifier changes.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
@@ -314,7 +385,7 @@ export class NavigationBar {
     }
 
     /**
-     * Notifies subscriber about change of active TextEditor.
+     * Notifies subscriber about change of atom's active {@link TextEditor}.
      *
      * @param  {function(event: {navigationBar: NavigationBar, textEditor: TextEditor})} callback Function to invoke when active TextEditor changes.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
@@ -326,7 +397,7 @@ export class NavigationBar {
     }
 
     /**
-     * Returns view for this NavigationBar.
+     * Returns {@link NavigationBarView} of this NavigationBar.
      *
      * @return {NavigationBarView} The view.
      */
@@ -337,27 +408,31 @@ export class NavigationBar {
     }
 
     /**
-     * Returns IdentifierProvider for given `textEditor` or *null* if no provider is available for that grammar.
+     * Returns {@link IdentifierProvider} for given `textEditor` or *null* if no provider is available for that grammar.
+     * Returns *null* if NavigationBar is not active.
      *
      * @param  {TextEditor} textEditor
-     * @return {IdentifierProvider|null}
+     * @return {IdentifierProvider|null} IdentifierProvider or null if none is available.
      */
     getProviderForTextEditor( textEditor ) {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
+        if( !this._active ) return null;
         
         return this._providers.getProviderForTextEditor( textEditor );
     }
-
+    
     onDidInitialize() {
         throw new Error('onDidInitialize Deprecated');
     }
     
     /**
-     * Returns active TextEditor or *null* if no TextEditor is active.
-     * @return {TextEditor|null} TextEditor or null
+     * Returns active {@link TextEditor} or *undefined* if no {@link TextEditor} is active.
+     * Returns *undefined* if NavigationBar is not active.
+     * @return {TextEditor|undefined} TextEditor or undefined
      */
     getActiveTextEditor() {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
+        if( !this._active ) return undefined;
         
         return this._activeEditor;
     }
