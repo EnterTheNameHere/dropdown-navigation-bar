@@ -190,7 +190,6 @@ export class BehaviorManager {
      *
      * @return {TextEditor|undefined} Currently active TextEditor
      */
-    @logged
     getActiveTextEditor() {
         return this._navigationBar.getActiveTextEditor();
     }
@@ -201,7 +200,6 @@ export class BehaviorManager {
      *
      * @return {IdentifiersProvider|null} IdentifiersProvider for currently active TextEditor or null.
      */
-    @logged
     getProviderForActiveTextEditor() {
         return this._navigationBar.getProviderForTextEditor( this.getActiveTextEditor() );
     }
@@ -211,7 +209,6 @@ export class BehaviorManager {
      *
      * @return {NavigationBar} NavigationBar.
      */
-    @logged
     getNavigationBar() {
         return this._navigationBar;
     }
@@ -221,7 +218,6 @@ export class BehaviorManager {
      *
      * @return {NavigationBarView} View for NavigationBar.
      */
-    @logged
     getNavigationBarView() {
         return this._navigationBar.getView();
     }
