@@ -64,7 +64,7 @@ export class BehaviorManager {
     _subscriptionToOnDidGenerateIdentifiers = null;
     
     /**
-     * Subscription to {@NavigationBar}'s did-change-selected-identifier event. Changes when Atom's active
+     * Subscription to {@link NavigationBar}'s `did-change-selected-identifier` event. Changes when Atom's active
      * {@link TextEditor} changes.
      * @type {Disposable}
      */
