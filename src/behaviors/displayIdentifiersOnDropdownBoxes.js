@@ -10,11 +10,55 @@ import { logged } from './../debug';
 etch.setScheduler(atom.views);
 
 export class DisplayIdentifiersOnDropdownBoxes {
+    /**
+     * Holds instance of BehaviorManager this Behavior is connected to.
+     * @type {BehaviorManager}
+     */
     _behaviorManager = null;
+    
+    /**
+     * Boolean value representing whether Behavior is active.
+     * @type {boolean}
+     */
     _behaviorActive = false;
-    _subscriptions = new CompositeDisposable();
+    
+    /**
+     * Holds subscriptions of this Behavior.
+     * @type {CompositeDisposable}
+     */
+    _subscriptions = null;
+    
+    /**
+     * Holds instance of custom event Emitter.
+     * @type {BehaviorManagerEmitter}
+     */
     _emitter = new BehaviorManagerEmitter();
+    
+    /**
+     * Boolean value representing whether this Behavior is disposed of.
+     * @type {boolean}
+     */
     _disposed = false;
+    
+    /**
+     * Subscription to {@link BehaviorManager}'s `did-change-selected-identifier` event. Changes when Atom's active
+     * {@link TextEditor} changes.
+     * @type {Disposable}
+     */
+    _subscriptionToOnDidChangeSelectedIdentifier = null;
+    
+    /**
+     * Boolean value setting if Cursor should be moved to selected {@link Identifier} when user selects
+     * {@link Identifier} at {@link DropdownBox}.
+     * @type {boolean}
+     */
+    moveCursorToSelectedIdentifier = false;
+    
+    /**
+     * Boolean value setting if {@link Identifier}'s debug information should be displayed with it's name.
+     * @type {boolean}
+     */
+    displayDebugInformation = false;
     
     /**
      * Creates new instance.
@@ -22,6 +66,23 @@ export class DisplayIdentifiersOnDropdownBoxes {
      */
     constructor( behaviorManager ) {
         this._behaviorManager = behaviorManager;
+    }
+    
+    /**
+     * Releases resources held by this object.
+     */
+    @logged
+    dispose() {
+        // Won't hurt if run even when object is already disposed of...
+        
+        this.deactivateBehavior();
+        
+        if( this._emitter ) {
+            this._emitter.dispose();
+        }
+        this._emitter = null;
+        
+        this._disposed = true;
     }
     
     /**
@@ -35,6 +96,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
         
         this._behaviorActive = true;
         
+        /*
         const view = this._behaviorManager.getNavigationBarView();
         const leftDropdownBox = view.getLeftDropdownBox();
         const rightDropdownBox = view.getRightDropdownBox();
@@ -74,6 +136,10 @@ export class DisplayIdentifiersOnDropdownBoxes {
                 this.updateDropdownBoxes();
             }, this )
         );
+        */
+       
+        this.registerOnDidChangeSelectedIdentifier();
+        this.registerListeners();
         
         this.updateDropdownBoxes();
     }
@@ -84,24 +150,88 @@ export class DisplayIdentifiersOnDropdownBoxes {
      */
     @logged
     deactivateBehavior() {
-        if( this._disposed ) return;
-        if( !this._behaviorActive ) return;
+        // Won't hurt to run even when already disposed of...
         
         this._behaviorActive = false;
+        
+        this.unregisterOnDidChangeSelectedIdentifier();
+        this.unregisterListeners();
     }
     
     /**
-     * Releases resources held by this object.
+     * Registers listener to `did-change-selected-identifier` used for moving Cursor to selected {@link Identifier}.
+     * If this setting is turned of, this method has no effect.
+     * If object has been disposed of, this method has no effect.
      */
-    @logged
-    dispose() {
+    registerOnDidChangeSelectedIdentifier() {
         if( this._disposed ) return;
+        if( !this._behaviorActive ) return;
+        if( !this.moveCursorToSelectedIdentifier ) return;
         
-        this._subscriptions.dispose();
+        this._subscriptionToOnDidChangeSelectedIdentifier = this._behaviorManager.onDidChangeSelectedIdentifier(
+            (evnt) => {
+                const pos = evnt.selectedIdentifier instanceof EmptyIdentifier
+                    ? evnt.selectedIdentifier.getEndPosition()
+                    : evnt.selectedIdentifier.getStartPosition();
+                if( pos ) {
+                    evnt.selectedIdentifier.getTextEditor().setCursorBufferPosition( pos );
+                }
+            },
+            this,
+            []
+        );
+    }
+    
+    /**
+     * Unregisters listener registered with {@link this#registerOnDidChangeSelectedIdentifier}.
+     */
+    unregisterOnDidChangeSelectedIdentifier() {
+        // Won't hurt running even when object is already disposed of...
+        
+        if( this._subscriptionToOnDidChangeSelectedIdentifier ) {
+            this._subscriptionToOnDidChangeSelectedIdentifier.dispose();
+        }
+        this._subscriptionToOnDidChangeSelectedIdentifier = null;
+    }
+    
+    /**
+     * Registers listeners required for this Behavior's function.
+     * If object has been disposed of, this method has no effect.
+     */
+    registerListeners() {
+        if( this._disposed ) return;
+        if( !this._behaviorActive ) return;
+        
+        if( this._subscriptions ) this._subscriptions.dispose();
+        this._subscriptions = new CompositeDisposable();
+        
+        this._subscriptions.add( this._behaviorManager.onDidChangeSelectedIdentifier(
+            () => {
+                this.updateDropdownBoxes();
+            },
+            this,
+            []
+        ));
+        
+        this._subscriptions.add( this._behaviorManager.onDidChangeActiveTextEditor(
+            () => {
+                this.updateDropdownBoxes();
+            },
+            this,
+            []
+        ));
+    }
+    
+    /**
+     * Unregisters listeners registered with {@link this#registerListeners}.
+     */
+    unregisterListeners() {
+        // Won't hurt running even when object is already disposed of...
+        
+        if( this._subscriptions ) {
+            this._subscriptions.dispose();
+        }
         this._subscriptions = null;
-        this._emitter.dispose();
-        
-        this._disposed = true;
     }
     
     /**
@@ -337,6 +467,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
     
     /**
      * Behavior contract function returning Behavior's settings schema.
+     *
      * @return {object|Array<object>} Schema of Behavior's settings.
      */
     @logged
@@ -348,9 +479,16 @@ export class DisplayIdentifiersOnDropdownBoxes {
                 items: [
                     {
                         type: 'checkbox',
-                        keyPath: 'displayIdentifiersOnDropdownBoxes.showDebug',
-                        text: 'Debug info',
-                        property: 'showDebug',
+                        keyPath: 'displayIdentifiersOnDropdownBoxes.moveCursorToSelectedIdentifier',
+                        text: 'Move cursor to selected Identifier',
+                        property: 'moveCursorToSelectedIdentifier',
+                        default: true
+                    },
+                    {
+                        type: 'checkbox',
+                        keyPath: 'displayIdentifiersOnDropdownBoxes.displayDebugInformation',
+                        text: 'Show Identifier\'s debug information',
+                        property: 'displayDebugInformation',
                         default: false
                     }
                 ]
@@ -366,8 +504,26 @@ export class DisplayIdentifiersOnDropdownBoxes {
     @logged
     settingsUpdated() {
         if( this._disposed ) return;
-        if( !this.activateBehavior ) return;
+        if( !this._behaviorActive ) return;
         
         this.updateDropdownBoxes();
+    }
+    
+    /**
+     * Checks if Behavior is disposed of.
+     *
+     * @return {Boolean} True when Behavior have been disposed of, false otherwise.
+     */
+    isDisposed() {
+        return this._disposed;
+    }
+    
+    /**
+     * Checks if Behavior is active, meaning it is visible and functioning.
+     *
+     * @return {boolean} True when Behavior is active, false otherwise.
+     */
+    isActive() {
+        return this._behaviorActive;
     }
 }
