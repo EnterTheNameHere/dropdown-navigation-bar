@@ -6,6 +6,7 @@ import { BehaviorManager } from './behaviorManager';
 import { DisplayIdentifiersOnDropdownBoxes } from './behaviors/displayIdentifiersOnDropdownBoxes';
 import { SortIdentifiersByAlphabet } from './behaviors/sortIdentifiersByAlphabet';
 import { SelectIdentifierAtCursorPosition } from './behaviors/selectIdentifierAtCursorPosition';
+import { JumpToIdentifierWhenItIsSelectedOnDropdownBox } from './behaviors/jumpToIdentifierWhenItIsSelectedOnDropdownBox';
 
 /**
  * NavigationBar displays two dropdown boxes for current TextEditor,
@@ -114,6 +115,7 @@ export class NavigationBar {
         this._behaviorManager.registerBehavior( displayIdentifiersBehavior );
         this._behaviorManager.registerBehavior( new SelectIdentifierAtCursorPosition( this._behaviorManager, displayIdentifiersBehavior ) );
         this._behaviorManager.registerBehavior( new SortIdentifiersByAlphabet( this._behaviorManager, displayIdentifiersBehavior) );
+        this._behaviorManager.registerBehavior( new JumpToIdentifierWhenItIsSelectedOnDropdownBox( this._behaviorManager ) );
     }
 
     /**
@@ -322,10 +324,10 @@ export class NavigationBar {
         
         this._subscriptionsToOnDidChangeSelected = new CompositeDisposable();
         this._subscriptionsToOnDidChangeSelected.add( leftDropdownBox.onDidChangeSelected( (evnt) => {
-            this.setSelectedIdentifier( evnt.item );
+            this.setSelectedIdentifier( evnt.item, true );
         }));
         this._subscriptionsToOnDidChangeSelected.add( rightDropdownBox.onDidChangeSelected( (evnt) => {
-            this.setSelectedIdentifier( evnt.item );
+            this.setSelectedIdentifier( evnt.item, true );
         }));
     }
     
@@ -361,15 +363,16 @@ export class NavigationBar {
      * If object has been disposed of, this method has no effect.
      *
      * @param {Identifier|null} selectedIdentifier
+     * @param {boolean} [selectedByUser=false] Set it to true to indicate change is made by user clicking on dropdown box item, not by code.
      *
      * @fires {did-change-selected-identifier}
      */
-    setSelectedIdentifier( selectedIdentifier ) {
+    setSelectedIdentifier( selectedIdentifier, selectedByUser = false ) {
         if( this._disposed ) return;
         if( !this._active ) return;
 
         this._selectedIdentifier = selectedIdentifier;
-        this._emitter.emit( 'did-change-selected-identifier', { navigationBar: this, selectedIdentifier: selectedIdentifier } );
+        this._emitter.emit( 'did-change-selected-identifier', { navigationBar: this, selectedIdentifier: selectedIdentifier, selectedByUser: selectedByUser } );
     }
 
     /**

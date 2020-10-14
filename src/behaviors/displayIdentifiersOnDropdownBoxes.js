@@ -138,7 +138,6 @@ export class DisplayIdentifiersOnDropdownBoxes {
         );
         */
        
-        this.registerOnDidChangeSelectedIdentifier();
         this.registerListeners();
         
         this.updateDropdownBoxes();
@@ -154,46 +153,9 @@ export class DisplayIdentifiersOnDropdownBoxes {
         
         this._behaviorActive = false;
         
-        this.unregisterOnDidChangeSelectedIdentifier();
         this.unregisterListeners();
     }
-    
-    /**
-     * Registers listener to `did-change-selected-identifier` used for moving Cursor to selected {@link Identifier}.
-     * If this setting is turned of, this method has no effect.
-     * If object has been disposed of, this method has no effect.
-     */
-    registerOnDidChangeSelectedIdentifier() {
-        if( this._disposed ) return;
-        if( !this._behaviorActive ) return;
-        if( !this.moveCursorToSelectedIdentifier ) return;
         
-        this._subscriptionToOnDidChangeSelectedIdentifier = this._behaviorManager.onDidChangeSelectedIdentifier(
-            (evnt) => {
-                const pos = evnt.selectedIdentifier instanceof EmptyIdentifier
-                    ? evnt.selectedIdentifier.getEndPosition()
-                    : evnt.selectedIdentifier.getStartPosition();
-                if( pos ) {
-                    evnt.selectedIdentifier.getTextEditor().setCursorBufferPosition( pos );
-                }
-            },
-            this,
-            []
-        );
-    }
-    
-    /**
-     * Unregisters listener registered with {@link this#registerOnDidChangeSelectedIdentifier}.
-     */
-    unregisterOnDidChangeSelectedIdentifier() {
-        // Won't hurt running even when object is already disposed of...
-        
-        if( this._subscriptionToOnDidChangeSelectedIdentifier ) {
-            this._subscriptionToOnDidChangeSelectedIdentifier.dispose();
-        }
-        this._subscriptionToOnDidChangeSelectedIdentifier = null;
-    }
-    
     /**
      * Registers listeners required for this Behavior's function.
      * If object has been disposed of, this method has no effect.
