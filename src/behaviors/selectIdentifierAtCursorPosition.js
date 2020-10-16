@@ -215,4 +215,19 @@ export class SelectIdentifierAtCursorPosition {
             this._behaviorManager.getNavigationBar().setSelectedIdentifier( identifier );
         }
     }
+    
+    /**
+     * Behavior contract function returning Behavior's settings schema.
+     *
+     * @return {object|Array<object>} Schema of Behavior's settings.
+     */
+    //@logged
+    settings() {
+        return [
+            {
+                type: 'behavior',
+                name: 'Select identifier at cursor position'
+            },
+        ];
+    }
 }

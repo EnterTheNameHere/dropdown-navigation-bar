@@ -436,6 +436,10 @@ export class DisplayIdentifiersOnDropdownBoxes {
     settings() {
         return [
             {
+                type: 'behavior',
+                name: 'Display identifiers on dropdown box'
+            },
+            {
                 type: 'group',
                 text: 'Display:',
                 items: [

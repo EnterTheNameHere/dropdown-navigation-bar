@@ -169,6 +169,10 @@ export class SortIdentifiersByAlphabet {
     settings() {
         return [
             {
+                type: 'behavior',
+                name: 'Sort identifiers by alphabet'
+            },
+            {
                 type: 'group',
                 text: 'Sort Identifiers by Alphabet:',
                 items: [
