@@ -476,7 +476,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
     }
     
     /**
-     * Checks if Behavior is disposed of.
+     * Behavior contract function. Checks if Behavior is disposed of.
      *
      * @return {Boolean} True when Behavior have been disposed of, false otherwise.
      */
@@ -485,7 +485,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
     }
     
     /**
-     * Checks if Behavior is active, meaning it is visible and functioning.
+     * Behavior contract function. Checks if Behavior is active, meaning it performs its function.
      *
      * @return {boolean} True when Behavior is active, false otherwise.
      */
