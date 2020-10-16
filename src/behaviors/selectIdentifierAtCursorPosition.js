@@ -2,7 +2,7 @@
 import { DisplayIdentifiersOnDropdownBoxes } from './displayIdentifiersOnDropdownBoxes';
 import { SortIdentifiersByAlphabet } from './sortIdentifiersByAlphabet';
 
-import { logged } from './../debug';
+//import { logged } from './../debug';
 
 export class SelectIdentifierAtCursorPosition {
     _disposed = false;
@@ -30,7 +30,7 @@ export class SelectIdentifierAtCursorPosition {
      * Behavior contract function. Behavior is told it can perform it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     activateBehavior() {
         if( this._disposed ) return;
         if( this._behaviorActive ) return;
@@ -46,7 +46,7 @@ export class SelectIdentifierAtCursorPosition {
      * Behavior contract function. Behavior is told it must stop performing it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     deactivateBehavior() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -62,7 +62,7 @@ export class SelectIdentifierAtCursorPosition {
      * Releases resources held by this object.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     dispose() {
         // Run even if disposed, won't hurt...
         
@@ -114,7 +114,7 @@ export class SelectIdentifierAtCursorPosition {
      *
      * @private
      */
-    @logged
+    //@logged
     registerDidChangeCursorPositionListener() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -135,7 +135,7 @@ export class SelectIdentifierAtCursorPosition {
      *
      * @private
      */
-    @logged
+    //@logged
     unregisterDidChangeCursorPositionListener() {
         // Run even if disposed, won't hurt...
         
@@ -152,7 +152,7 @@ export class SelectIdentifierAtCursorPosition {
      *
      * @private
      */
-    @logged
+    //@logged
     startObservingChangeOfActiveTextEditor() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -181,7 +181,7 @@ export class SelectIdentifierAtCursorPosition {
      *
      * @private
      */
-    @logged
+    //@logged
     stopObservingChangeOfActiveTextEditor() {
         // Run even if disposed, won't hurt...
         

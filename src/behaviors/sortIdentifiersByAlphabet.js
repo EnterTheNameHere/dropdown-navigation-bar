@@ -1,7 +1,7 @@
 
 import { TopScopeIdentifier, EmptyIdentifier } from '../identifiers';
 
-import { logged } from './../debug';
+//import { logged } from './../debug';
 
 export class SortIdentifiersByAlphabet {
     _behaviorManager = null;
@@ -24,7 +24,7 @@ export class SortIdentifiersByAlphabet {
      * Behavior contract function. Behavior is told it can perform it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     activateBehavior() {
         if( this._disposed ) return;
         if( this._behaviorActive ) return;
@@ -38,7 +38,7 @@ export class SortIdentifiersByAlphabet {
      * Behavior contract function. Behavior is told it must stop performing it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     deactivateBehavior() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -52,7 +52,7 @@ export class SortIdentifiersByAlphabet {
      * Releases resources held by this object.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     dispose() {
         // Run even if disposed, won't hurt...
         
@@ -67,7 +67,7 @@ export class SortIdentifiersByAlphabet {
      * Unregisters any previous existing listener.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     registerWillUpdateDropdownBoxesListener() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -85,7 +85,7 @@ export class SortIdentifiersByAlphabet {
     /**
      * Unregisters listener to {@link DisplayIdentifiersOnDropdownBoxes}'s `will-update-dropdown-boxes` event.
      */
-    @logged
+    //@logged
     unregisterWillUpdateDropdownBoxesListener() {
         // Run even if disposed, won't hurt...
         
@@ -100,7 +100,7 @@ export class SortIdentifiersByAlphabet {
      * `will-update-dropdown-boxes` event to the function.
      * @param {function(parentIdentifiers: Array, childrenIdentifiers: Array>)} willUpdateDropdownBoxesEvent
      */
-    @logged
+    //@logged
     sortIdentifiersByAlphabet( willUpdateDropdownBoxesEvent ) {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -165,7 +165,7 @@ export class SortIdentifiersByAlphabet {
      * Behavior contract function returning Behavior's settings schema.
      * @return {object|Array<object>} Schema of Behavior's settings.
      */
-    @logged
+    //@logged
     settings() {
         return [
             {
@@ -196,7 +196,7 @@ export class SortIdentifiersByAlphabet {
      * perform update right after settings are changed.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     settingsChanged() {
         if( this._disposed ) return;
         if( !this.activateBehavior ) return;

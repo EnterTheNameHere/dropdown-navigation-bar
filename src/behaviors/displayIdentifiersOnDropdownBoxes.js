@@ -5,7 +5,7 @@ import { dom as $, default as etch } from 'etch';
 import { BehaviorManagerEmitter } from './../behaviorManagerEmitter';
 import { Identifier, EmptyIdentifier } from './../identifiers';
 
-import { logged } from './../debug';
+//import { logged } from './../debug';
 
 etch.setScheduler(atom.views);
 
@@ -71,7 +71,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
     /**
      * Releases resources held by this object.
      */
-    @logged
+    //@logged
     dispose() {
         // Won't hurt if run even when object is already disposed of...
         
@@ -89,7 +89,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
      * Behavior contract function. Called when Behavior can perform it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     activateBehavior() {
         if( this._disposed ) return;
         if( this._behaviorActive ) return;
@@ -147,7 +147,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
      * Behavior contract function. Called when Behavior must stop performing it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     deactivateBehavior() {
         // Won't hurt to run even when already disposed of...
         
@@ -238,7 +238,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
      *
      * @emits {will-update-dropdown-boxes}
      */
-    @logged
+    //@logged
     updateDropdownBoxes() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -432,7 +432,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
      *
      * @return {object|Array<object>} Schema of Behavior's settings.
      */
-    @logged
+    //@logged
     settings() {
         return [
             {
@@ -463,7 +463,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
      * perform update right after settings are changed.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     settingsUpdated() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;

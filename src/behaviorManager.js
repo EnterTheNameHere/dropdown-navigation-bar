@@ -3,7 +3,7 @@ import { CompositeDisposable } from 'atom';
 import { BehaviorManagerEmitter } from './behaviorManagerEmitter';
 import { BehaviorSettingsManager } from './behaviorSettingsManager';
 
-import { logged } from './debug';
+//import { logged } from './debug';
 
 export class Behavior {
     initialize() {}
@@ -83,7 +83,7 @@ export class BehaviorManager {
      * Disposes of all resources owned by the instance of this class.
      * If object has been disposed of, this method has no effect.
      */
-    @logged
+    //@logged
     dispose() {
         if( this._disposed ) return;
         
@@ -122,7 +122,7 @@ export class BehaviorManager {
      *
      * @private
      */
-    @logged
+    //@logged
     initialize() {
         if( this._disposed ) return;
         
@@ -229,7 +229,7 @@ export class BehaviorManager {
      * @param {object} behavior Instance of object implementing a behavior.
      * @returns {BehaviorManager} Chainable.
      */
-    @logged
+    //@logged
     registerBehavior( behavior ) {
         if( this._disposed ) return this;
         
@@ -250,7 +250,7 @@ export class BehaviorManager {
      * @param  {object} behavior Previously registered behavior.
      * @return {BehaviorManager} Chainable.
      */
-    @logged
+    //@logged
     unregisterBehavior( behavior ) {
         if( this._disposed ) return this;
         

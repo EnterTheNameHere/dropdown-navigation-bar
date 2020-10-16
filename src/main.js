@@ -4,7 +4,8 @@ import { CompositeDisposable } from 'atom'; // eslint-disable-line import/no-unr
 
 import { NavigationBar } from './navigationBar';
 import { NavigationBarView } from './navigationBarView';
-import { logged } from './debug';
+
+//import { logged } from './debug';
 
 class DropdownNavigationBarPackage {
     _active = false;
@@ -16,7 +17,7 @@ class DropdownNavigationBarPackage {
     _visible = true;
     currentActiveEditor = null;
 
-    @logged
+    //@logged
     activate() {
         if( this._active ) return;
 
@@ -36,7 +37,7 @@ class DropdownNavigationBarPackage {
         this._active = true;
     }
     
-    @logged
+    //@logged
     deactivate() {
         if( !this._active ) return;
 
@@ -47,7 +48,7 @@ class DropdownNavigationBarPackage {
         this._active = false;
     }
 
-    @logged
+    //@logged
     toggle() {
         if( !this._active ) return;
 
@@ -62,7 +63,7 @@ class DropdownNavigationBarPackage {
         }
     }
     
-    @logged
+    //@logged
     navigationBarViewProvider( navigationBar ) {
         if( !(navigationBar instanceof NavigationBar) ) return null;
 
