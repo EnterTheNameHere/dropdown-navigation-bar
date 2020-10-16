@@ -207,4 +207,22 @@ export class SortIdentifiersByAlphabet {
         
         this._displayIdentifiersOnDropdownBoxes.updateDropdownBoxes();
     }
+    
+    /**
+     * Behavior contract function. Checks if Behavior is disposed of.
+     *
+     * @return {Boolean} True when Behavior have been disposed of, false otherwise.
+     */
+    isDisposed() {
+        return this._disposed;
+    }
+    
+    /**
+     * Behavior contract function. Checks if Behavior is active, meaning it performs its function.
+     *
+     * @return {boolean} True when Behavior is active, false otherwise.
+     */
+    isActive() {
+        return this._behaviorActive;
+    }
 }
