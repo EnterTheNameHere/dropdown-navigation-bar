@@ -430,36 +430,21 @@ export class DisplayIdentifiersOnDropdownBoxes {
     /**
      * Behavior contract function returning Behavior's settings schema.
      *
-     * @return {object|Array<object>} Schema of Behavior's settings.
+     * @return {object} Schema of Behavior's settings.
      */
     //@logged
     settings() {
-        return [
-            {
-                type: 'behavior',
-                name: 'Display identifiers on dropdown box'
-            },
-            {
-                type: 'group',
-                text: 'Display:',
-                items: [
-                    {
-                        type: 'checkbox',
-                        keyPath: 'displayIdentifiersOnDropdownBoxes.moveCursorToSelectedIdentifier',
-                        text: 'Move cursor to selected Identifier',
-                        property: 'moveCursorToSelectedIdentifier',
-                        default: true
-                    },
-                    {
-                        type: 'checkbox',
-                        keyPath: 'displayIdentifiersOnDropdownBoxes.displayDebugInformation',
-                        text: 'Show Identifier\'s debug information',
-                        property: 'displayDebugInformation',
-                        default: false
-                    }
-                ]
+        return {
+            name: 'Display identifiers on dropdown boxes',
+            config: {
+                displayDebugInformation: {
+                    title: 'DisplayDebugInformation',
+                    description: 'Display additional information. Only useful for developing of this plugin...',
+                    type: 'boolean',
+                    default: true
+                }
             }
-        ];
+        };
     }
     
     /**

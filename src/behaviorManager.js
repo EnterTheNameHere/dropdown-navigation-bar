@@ -1,3 +1,4 @@
+/* global atom */
 
 import { CompositeDisposable } from 'atom';
 import { BehaviorManagerEmitter } from './behaviorManagerEmitter';
@@ -5,12 +6,67 @@ import { BehaviorSettingsManager } from './behaviorSettingsManager';
 
 //import { logged } from './debug';
 
+/**
+ * BehaviorSettings contract
+ * @interface
+ */
+export class BehaviorSettings {
+    /**
+     * Defines name of {@link Behavior}. Must be unique. Used to identify Behavior.
+     *
+     * Define unique name for single Behavior by which it can be identified by {@link BehaviorManager}. If you
+     * are updating existing Behavior, it should have it's name. Versioning is not considered - this is not a plugin system...
+     * If you create new Behavior, which doesn't update any existing one, it should not have name which would conflict
+     * with any existing Behavior.
+     *
+     * Identification is mainly used when considering the order in which Behaviors will receive events from
+     * {@link BehaviorManager} emmiter and when managing settings.
+     * @type {string}
+     */
+    name = '';
+}
+
+/**
+ * Behavior contract
+ */
 export class Behavior {
-    initialize() {}
+    /**
+     * Releases resources held by this object.
+     */
     dispose() {}
+    /**
+     * Behavior is told it can start performing it's behavior.
+     * If object has been disposed of, this method must have no effect.
+     */
     activateBehavior() {}
+    /**
+     * Behavior is told it must stop performing it's behavior.
+     * If object has been disposed of, this method must have no effect.
+     */
     deactivateBehavior() {}
+    /**
+     * Returns Behavior's settings schema.
+     *
+     * @return {BehaviorSettings} Schema of Behavior's settings.
+     */
     settings() {}
+    /**
+     * Called when Behavior's settings are changed. Use it when you need to perform update when setting is changed.
+     * If object has been disposed of, this method must have no effect.
+     */
+    settingsChanged() {}
+    /**
+     * Checks if Behavior is disposed of.
+     *
+     * @return {Boolean} True when Behavior have been disposed of, false otherwise.
+     */
+    isDisposed() {}
+    /**
+     * Checks if Behavior is active, meaning it performs its function.
+     *
+     * @return {boolean} True when Behavior is active, false otherwise.
+     */
+    isActive() {}
 }
 
 /**
@@ -222,8 +278,42 @@ export class BehaviorManager {
         return this._navigationBar.getView();
     }
     
+    // Todo: move checking into it's own class?
+    checkInstanceIsBehavior( behavior ) {
+        if( typeof behavior.settings !== 'function' ) {
+            atom.notifications.addError( 'behavior must implement settings function!' );
+            //throw new Error('behavior must implement settings function!');
+            
+            return false;
+        }
+        
+        const settings = behavior.settings();
+        if( !Object.prototype.hasOwnProperty.call( settings, 'name' ) ) {
+            atom.notifications.addError( 'behavior\'s settings object doesn\'t define behavior\'s "name"! Define "name" in settings object.' );
+            //throw new Error('behavior\'s settings object doesn\'t define behavior\'s "name"! Define behavior.name in settings object.');
+            
+            return false;
+        }
+        const behaviorName = settings.name;
+        
+        if( typeof behavior.activateBehavior !== 'function' ) {
+            atom.notifications.addError( `${behaviorName} behavior doesn't implement activateBehavior function!` );
+            //throw new Error(`${behaviorName} behavior doesn't implement activateBehavior function!`);
+            
+            return false;
+        }
+        if( typeof behavior.deactivateBehavior !== 'function' ) {
+            atom.notifications.addError( `${behaviorName} behavior doesn't implement deactivateBehavior function!` );
+            //throw new Error(`${behaviorName} behavior doesn't implement deactivateBehavior function!`);
+            
+            return false;
+        }
+        
+        return true;
+    }
+    
     /**
-     * Registers behavior instance.
+     * Registers behavior instance. Performs check if the argument is a valid {@link Behavior} object.
      * If object has been disposed of, this method has no effect.
      *
      * @param {object} behavior Instance of object implementing a behavior.
@@ -232,6 +322,8 @@ export class BehaviorManager {
     //@logged
     registerBehavior( behavior ) {
         if( this._disposed ) return this;
+        
+        if( !this.checkInstanceIsBehavior( behavior ) ) return this;
         
         this._behaviors.add( behavior );
         this._settings.registerBehavior( behavior );

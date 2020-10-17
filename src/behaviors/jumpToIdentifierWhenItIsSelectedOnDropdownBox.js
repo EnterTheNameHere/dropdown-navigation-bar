@@ -135,15 +135,12 @@ export class JumpToIdentifierWhenItIsSelectedOnDropdownBox {
     /**
      * Behavior contract function returning Behavior's settings schema.
      *
-     * @return {object|Array<object>} Schema of Behavior's settings.
+     * @return {object} Schema of Behavior's settings.
      */
     //@logged
     settings() {
-        return [
-            {
-                type: 'behavior',
-                name: 'Jump to identifier when it is selected on dropdown box'
-            },
-        ];
+        return {
+            name: 'Jump to identifier when it is selected on dropdown box'
+        };
     }
 }

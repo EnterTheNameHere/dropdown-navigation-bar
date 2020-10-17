@@ -163,36 +163,37 @@ export class SortIdentifiersByAlphabet {
     
     /**
      * Behavior contract function returning Behavior's settings schema.
-     * @return {object|Array<object>} Schema of Behavior's settings.
+     * @return {object} Schema of Behavior's settings.
      */
     //@logged
     settings() {
-        return [
-            {
-                type: 'behavior',
-                name: 'Sort identifiers by alphabet'
-            },
-            {
-                type: 'group',
-                text: 'Sort Identifiers by Alphabet:',
-                items: [
-                    {
-                        text: 'on the left dropdown box',
-                        keyPath: 'sortIdentifiersByAlphabet.sortLeftDropdownBoxActive',
-                        property: 'sortLeft',
-                        default: false,
-                        type: 'checkbox'
-                    },
-                    {
-                        text: 'on the right dropdown box',
-                        keyPath: 'sortIdentifiersByAlphabet.sortRightDropdownBoxActive',
-                        property: 'sortRight',
-                        default: false,
-                        type: 'checkbox'
-                    }
-                ]
+        return {
+            name: 'Sort identifiers by alphabet',
+            config: {
+                sortingModeForLeftDropdown: {
+                    title: 'left:',
+                    type: 'string',
+                    default: 'File position',
+                    enum: [
+                        { value: 'File position', description: 'Sort Identifiers by how they appear in file.' },
+                        { value: 'Alphabet', description: 'Sort Identifiers by Alphabet' },
+                    ],
+                    radio: true,
+                    group: 'Sort:'
+                },
+                sortingModeForRightDropdown: {
+                    title: 'right:',
+                    type: 'string',
+                    default: 'File position',
+                    enum: [
+                        { value: 'File position', description: 'Sort Identifiers by how they appear in file.' },
+                        { value: 'Alphabet', description: 'Sort Identifiers by Alphabet' },
+                    ],
+                    radio: true,
+                    group: 'Sort:'
+                }
             }
-        ];
+        };
     }
     
     /**

@@ -62,21 +62,24 @@ export class BehaviorSettingsManager {
         const settingsItems = new Array();
         
         // Settings could be stored as array...
-        if( Array.isArray( settings ) ) {
-            if( settings.length > 0 ) {
-                for( const item of settings ) {
-                    const itemDS = this.processItem( item );
-                    if( itemDS ) settingsItems.push( itemDS );
-                }
-            }
-        } else {
-            const itemDS = this.processItem( settings );
-            if( itemDS ) settingsItems.push( itemDS );
-        }
+        // if( Array.isArray( settings ) ) {
+        //     if( settings.length > 0 ) {
+        //         for( const item of settings ) {
+        //             const itemDS = this.processItem( item );
+        //             if( itemDS ) settingsItems.push( itemDS );
+        //         }
+        //     }
+        // } else {
+        //     const itemDS = this.processItem( settings );
+        //     if( itemDS ) settingsItems.push( itemDS );
+        // }
+        //
+        // if( settingsItems.length === 0 ) {
+        //     throw new Error('Behavior settings must have at least one item!');
+        // }
         
-        if( settingsItems.length === 0 ) {
-            throw new Error('Behavior settings must have at least one item!');
-        }
+        // FIX: it's temp now, until settings get implemented
+        settingsItems.push( { type: 'checkbox', keyPath: 'behaviors.temp', property: 'temp', temp: 'temp', default: true, desc: 'more temp desc' } );
         
         return { behavior: behavior, settingsItems: settingsItems };
     }

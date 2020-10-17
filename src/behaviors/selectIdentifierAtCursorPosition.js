@@ -219,16 +219,13 @@ export class SelectIdentifierAtCursorPosition {
     /**
      * Behavior contract function returning Behavior's settings schema.
      *
-     * @return {object|Array<object>} Schema of Behavior's settings.
+     * @return {object} Schema of Behavior's settings.
      */
     //@logged
     settings() {
-        return [
-            {
-                type: 'behavior',
-                name: 'Select identifier at cursor position'
-            },
-        ];
+        return {
+            name: 'Select identifier at cursor position'
+        };
     }
     
     /**
