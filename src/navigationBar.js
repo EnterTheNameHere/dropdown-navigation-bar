@@ -314,7 +314,6 @@ export class NavigationBar {
      *
      * @private
      */
-    @logged
     registerOnDidChangeSelected() {
         if( this._disposed ) return;
         if( !this._active ) return;
