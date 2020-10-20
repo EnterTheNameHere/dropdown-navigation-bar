@@ -294,7 +294,21 @@ export class BehaviorManager {
             
             return false;
         }
+        
         const behaviorName = settings.name;
+        if( typeof behaviorName !== 'string' ) {
+            atom.notifications.addError( 'behavior\'s settings.name must be string!' );
+            //throw new Error('behavior\'s settings.name must be string!');
+            
+            return false;
+        }
+        if( behaviorName.length === 0 ) {
+            atom.notifications.addError( 'behavior\'s settings.name must not be empty!' );
+            //throw new Error('behavior\'s settings.name must not be empty!');
+            
+            return false;
+        }
+        
         
         if( typeof behavior.activateBehavior !== 'function' ) {
             atom.notifications.addError( `${behaviorName} behavior doesn't implement activateBehavior function!` );
