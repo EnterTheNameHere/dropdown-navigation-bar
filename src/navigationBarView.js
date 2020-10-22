@@ -27,7 +27,7 @@ export class NavigationBarView {
     _subscriptions = null;
     
     /**
-     * Creates new instance of {@link this} component.
+     * Creates new instance of this component.
      * @param {Object} [props={}] Component (etch) props object.
      */
     constructor( props = {}/*, children = {}*/ ) {
@@ -36,12 +36,20 @@ export class NavigationBarView {
         
         etch.initialize(this);
     }
-
+    
+    /**
+     * Removes all listeners and resources.
+     * @return {Promise}
+     */
     async destroy() {
         this._subscriptions.dispose();
         await etch.destroy(this);
     }
-
+    
+    /**
+     * Updates the state of this component.
+     * @param {Object} [newProps={}] Component (etch) props object.
+     */
     update( newProps = {}/*, newChildren = {}*/ ) {
         this._props = {...this._props, ...newProps};
 
@@ -49,7 +57,11 @@ export class NavigationBarView {
 
         return etch.update(this);
     }
-
+    
+    /**
+     * Creates html {@link Element} to be displayed.
+     * @return {Element}
+     */
     render() {
         return $.div(
             { class: 'dropdown-navigation-bar' },
@@ -59,11 +71,19 @@ export class NavigationBarView {
             $(NavigationBarSettingsView, { ref: 'settings', navigationBarView: this })
         );
     }
-
+    
+    /**
+     * Returns {@link NavigationBar} this component belongs to.
+     * @return {NavigationBar} model for this component.
+     */
     getModel() {
         return this._navigationBar;
     }
-
+    
+    /**
+     * Assigns {@link NavigationBar} this component belongs to.
+     * @param {NavigationBar} navigationBar model for this component.
+     */
     setModel( navigationBar ) {
         this._subscriptions.dispose();
         this._subscriptions = new CompositeDisposable();
