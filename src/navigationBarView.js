@@ -14,11 +14,24 @@ const $ = etch.dom;
 etch.setScheduler(atom.views);
 
 export class NavigationBarView {
+    /**
+     * Holds instance of {@link NavigationBar} {@link this} belongs to.
+     * @type {NavigationBar}
+     */
     _navigationBar = null;
+    
+    /**
+     * Holds subscriptions of listeners to events.
+     * @type {CompositeDisposable}
+     */
     _subscriptions = null;
-
+    
+    /**
+     * Creates new instance of {@link this} component.
+     * @param {Object} [props={}] Component (etch) props object.
+     */
     constructor( props = {}/*, children = {}*/ ) {
-        this.props = props;
+        this._props = props;
         this._subscriptions = new CompositeDisposable();
         
         etch.initialize(this);
@@ -30,7 +43,7 @@ export class NavigationBarView {
     }
 
     update( newProps = {}/*, newChildren = {}*/ ) {
-        this.props = {...this.props, ...newProps};
+        this._props = {...this._props, ...newProps};
 
 
 
