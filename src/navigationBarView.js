@@ -28,11 +28,16 @@ export class NavigationBarView {
     
     /**
      * Creates new instance of this component.
-     * @param {Object} [props={}] Component (etch) props object.
+     * @param {Object}        props               Component (etch) props object.
+     * @param {NavigationBar} props.navigationBar Instance of NavigationBar used as a model for this component.
+     *
+     * @throws {Error} if props is missing navigationBar set to instance of NavigationBar object.
      */
-    constructor( props = {}/*, children = {}*/ ) {
+    constructor( props/*, children = {}*/ ) {
+        if( !props.navigationBar ) throw new Error('NavigationBarView props is missing props.navigationBar! Set navigationBar in props to instance of NavigationBar object.');
         this._props = props;
         this._subscriptions = new CompositeDisposable();
+        this._navigationBar = props.navigationBar;
         
         etch.initialize(this);
     }
@@ -68,7 +73,7 @@ export class NavigationBarView {
             $(DropdownBoxView, { ref: 'leftDropbox' }),
             $(DropdownBoxView, { ref: 'rightDropbox' }),
             $(NavigationBarSettingsButtonView, { ref: 'settingsButton', navigationBarView: this }),
-            $(NavigationBarSettingsView, { ref: 'settings', navigationBarView: this })
+            $(NavigationBarSettingsView, { ref: 'settings', navigationBarView: this, behaviorSettingsManager: this._navigationBar.getBehaviorManager().getBehaviorSettingsManager() })
         );
     }
     
@@ -78,17 +83,6 @@ export class NavigationBarView {
      */
     getModel() {
         return this._navigationBar;
-    }
-    
-    /**
-     * Assigns {@link NavigationBar} this component belongs to.
-     * @param {NavigationBar} navigationBar model for this component.
-     */
-    setModel( navigationBar ) {
-        this._subscriptions.dispose();
-        this._subscriptions = new CompositeDisposable();
-
-        this._navigationBar = navigationBar;
     }
     
     /**

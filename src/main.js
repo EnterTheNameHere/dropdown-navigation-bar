@@ -67,8 +67,8 @@ class DropdownNavigationBarPackage {
     navigationBarViewProvider( navigationBar ) {
         if( !(navigationBar instanceof NavigationBar) ) return null;
 
-        const view = new NavigationBarView();
-        view.setModel( navigationBar );
+        const view = new NavigationBarView( { navigationBar: navigationBar } );
+        //view.setModel( navigationBar );
         return view;
     }
 }

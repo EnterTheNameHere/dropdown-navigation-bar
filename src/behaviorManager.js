@@ -1,6 +1,6 @@
-/* global atom */
 
 import { CompositeDisposable } from 'atom';
+import { Behavior } from './behaviors/behavior';
 import { BehaviorManagerEmitter } from './behaviorManagerEmitter';
 import { BehaviorSettingsManager } from './behaviorSettingsManager';
 
@@ -24,49 +24,6 @@ export class BehaviorSettings {
      * @type {string}
      */
     name = '';
-}
-
-/**
- * Behavior contract
- */
-export class Behavior {
-    /**
-     * Releases resources held by this object.
-     */
-    dispose() {}
-    /**
-     * Behavior is told it can start performing it's behavior.
-     * If object has been disposed of, this method must have no effect.
-     */
-    activateBehavior() {}
-    /**
-     * Behavior is told it must stop performing it's behavior.
-     * If object has been disposed of, this method must have no effect.
-     */
-    deactivateBehavior() {}
-    /**
-     * Returns Behavior's settings schema.
-     *
-     * @return {BehaviorSettings} Schema of Behavior's settings.
-     */
-    settings() {}
-    /**
-     * Called when Behavior's settings are changed. Use it when you need to perform update when setting is changed.
-     * If object has been disposed of, this method must have no effect.
-     */
-    settingsChanged() {}
-    /**
-     * Checks if Behavior is disposed of.
-     *
-     * @return {Boolean} True when Behavior have been disposed of, false otherwise.
-     */
-    isDisposed() {}
-    /**
-     * Checks if Behavior is active, meaning it performs its function.
-     *
-     * @return {boolean} True when Behavior is active, false otherwise.
-     */
-    isActive() {}
 }
 
 /**
@@ -104,7 +61,7 @@ export class BehaviorManager {
      * Holds {@link BehaviorSettingsManager} assigned to this BehaviorManager.
      * @type {BehaviorSettingsManager}
      */
-    _settings = new BehaviorSettingsManager();
+    _settings = new BehaviorSettingsManager(this);
     
     /**
      * Holds subscriptions of BehaviorManager which are alive through this BehaviorManager's life.
@@ -278,52 +235,13 @@ export class BehaviorManager {
         return this._navigationBar.getView();
     }
     
-    // Todo: move checking into it's own class?
-    checkInstanceIsBehavior( behavior ) {
-        if( typeof behavior.settings !== 'function' ) {
-            atom.notifications.addError( 'behavior must implement settings function!' );
-            //throw new Error('behavior must implement settings function!');
-            
-            return false;
-        }
-        
-        const settings = behavior.settings();
-        if( !Object.prototype.hasOwnProperty.call( settings, 'name' ) ) {
-            atom.notifications.addError( 'behavior\'s settings object doesn\'t define behavior\'s "name"! Define "name" in settings object.' );
-            //throw new Error('behavior\'s settings object doesn\'t define behavior\'s "name"! Define behavior.name in settings object.');
-            
-            return false;
-        }
-        
-        const behaviorName = settings.name;
-        if( typeof behaviorName !== 'string' ) {
-            atom.notifications.addError( 'behavior\'s settings.name must be string!' );
-            //throw new Error('behavior\'s settings.name must be string!');
-            
-            return false;
-        }
-        if( behaviorName.length === 0 ) {
-            atom.notifications.addError( 'behavior\'s settings.name must not be empty!' );
-            //throw new Error('behavior\'s settings.name must not be empty!');
-            
-            return false;
-        }
-        
-        
-        if( typeof behavior.activateBehavior !== 'function' ) {
-            atom.notifications.addError( `${behaviorName} behavior doesn't implement activateBehavior function!` );
-            //throw new Error(`${behaviorName} behavior doesn't implement activateBehavior function!`);
-            
-            return false;
-        }
-        if( typeof behavior.deactivateBehavior !== 'function' ) {
-            atom.notifications.addError( `${behaviorName} behavior doesn't implement deactivateBehavior function!` );
-            //throw new Error(`${behaviorName} behavior doesn't implement deactivateBehavior function!`);
-            
-            return false;
-        }
-        
-        return true;
+    /**
+     * Returns {@link BehaviorSettingsManager} of this BehaviorManager.
+     * 
+     * @return {BehaviorSettingsManager} BehaviorSettingsManager of this BehaviorManager.
+     */
+    getBehaviorSettingsManager() {
+        return this._settings;
     }
     
     /**
@@ -337,7 +255,7 @@ export class BehaviorManager {
     registerBehavior( behavior ) {
         if( this._disposed ) return this;
         
-        if( !this.checkInstanceIsBehavior( behavior ) ) return this;
+        if( !Behavior.checkInstanceIsBehavior( behavior ) ) return this;
         
         this._behaviors.add( behavior );
         this._settings.registerBehavior( behavior );

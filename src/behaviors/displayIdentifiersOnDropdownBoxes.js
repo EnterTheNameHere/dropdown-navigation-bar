@@ -380,16 +380,16 @@ export class DisplayIdentifiersOnDropdownBoxes {
                     });
                 };
                 
+                const debugInfo = this.displayDebugInformation
+                    ? $.span( {class: 'debug'}, kinds, additionals, positions )
+                    : '';
+                
                 return [
                     getIconSpan(),
                     $.span( {class: 'name'},
                         name,
                         getAdditionalKindsSpan(),
-                        $.span( {class: 'debug'},
-                            kinds,
-                            additionals,
-                            positions
-                        )
+                        debugInfo
                     )
                 ];
             }
@@ -438,7 +438,8 @@ export class DisplayIdentifiersOnDropdownBoxes {
             name: 'Display identifiers on dropdown boxes',
             config: {
                 displayDebugInformation: {
-                    title: 'DisplayDebugInformation',
+                    title: 'Display debug information',
+                    property: 'DisplayDebugInformation',
                     description: 'Display additional information. Only useful for developing of this plugin...',
                     type: 'boolean',
                     default: true

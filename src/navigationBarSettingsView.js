@@ -6,11 +6,21 @@ import { dom as $, default as etch } from 'etch';
 etch.setScheduler(atom.views);
 
 export class NavigationBarSettingsView {
-    _itemsList = new Array();
+    /**
+     * Holds instance of {@link BehaviorSettingsManager} {@link this} belongs to.
+     * @type {BehaviorSettingsManager}
+     */
+    _behaviorSettingsManager = null;
+    
+    /**
+     * Holds subscriptions of listeners to events while config popup dialog is opened.
+     * @type {CompositeDisposable}
+     */
     _whileShownSubscriptions = null;
     
     constructor( props = {}/*, children = {}*/ ) {
         this._props = { ...{ hidden: true }, ...props };
+        this._behaviorSettingsManager = props.behaviorSettingsManager;
         
         etch.initialize(this);
     }
@@ -107,12 +117,41 @@ export class NavigationBarSettingsView {
         }
     }
     
-    addSettings( settings ) {
-        this._itemsList.push( settings );
-        
-        this.update();
+    renderCheckbox( configItem ) {
+        const checked = atom.config.get( configItem.keyPath, configItem.default );
+        return [
+            $.input({
+                id:      String( configItem.keyPath ),
+                name:    String( configItem.keyPath ),
+                type:    'checkbox',
+                class:   'input-checkbox',
+                checked: checked,
+                on: {
+                    change: ( changeEvent ) =>
+                    {
+                        atom.config.set( configItem.keyPath, changeEvent.target.checked );
+                        this._props.navigationBarView.update();
+                    }
+                }
+            }),
+            $.label({
+                htmlFor: String( configItem.keyPath ),
+                class:   'input-label'
+            },           String( configItem.title ))
+        ];
     }
     
+    prerender() {
+        this._renderedItems = [];
+        for( const [,behaviorSettings] of this._behaviorSettingsManager.getSettings() ) {
+            for( const configItem of behaviorSettings.configItems ) {
+                if( configItem.type === 'boolean' ) {
+                    this._renderedItems.push( this.renderCheckbox( configItem ) );
+                }
+            }
+        }
+    }
+        
     render() {
         const classList = [
             'navigation-bar-settings',
@@ -131,65 +170,20 @@ export class NavigationBarSettingsView {
         styleList.push( 'width: 200px;' );
         styleList.push( 'height: auto;' );
         
-        const renderCheckbox = ( item ) => {
-            const checked = atom.config.get( `dropdown-navigation-bar.${item.keyPath}`, item.default );
-            return [
-                $.input({
-                    id: String(item.keyPath),
-                    name: String(item.keyPath),
-                    type: 'checkbox',
-                    class: 'input-checkbox',
-                    checked: checked,
-                    on: { change: ( changeEvent ) => {
-                        atom.config.set( `dropdown-navigation-bar.${item.keyPath}`, changeEvent.target.checked );
-                        this._props.navigationBarView.update();
-                    }}
-                }),
-                $.label({
-                    htmlFor: String(item.keyPath),
-                    class: 'input-label'
-                }, String(item.shortDesc)
-                )
-            ];
-        };
-        
-        const renderGroup = ( group ) => {
-            return $.fieldset( {},
-                $.legend( { class: 'panel-heading' }, group.desc ),
-                group.items.map( ( item ) => { return $.div( {}, renderItem( item ) ); } )
-            );
-        };
-        
-        const renderItem = ( item ) => {
-            // Check if multiple items are grouped
-            // inside an array... Process the array
-            // in that case.
-            if( !item.type && Array.isArray( item ) ) {
-                if( item.length > 0 && item[0].type ) {
-                    for( const subItem of item ) {
-                        return renderItem( subItem );
-                    }
-                }
-            }
-            
-            if( item.type === 'checkbox' ) return renderCheckbox( item );
-            else if( item.type === 'group' ) return renderGroup( item );
-            else if( !item.type ) return $.span( {}, 'Error, item doesn\'t have a type property set.' );
-            return $.span( {}, `Error, item.type of '${item?.type}' has no rendering handler.` );
-        };
-        
-        if( !this._renderedItems ) {
-            this._renderedItems = new Array();
-            
-            for( const item of this._itemsList ) {
-                this._renderedItems.push( $.li( {}, renderItem( item ) ) );
-            }
-        }
+        if( !this._renderedItems ) this.prerender();
         
         return $.div( { class: classList.join(' '), style: styleList.join(';') },
             $.ol( { class: 'list-group' },
                 ...this._renderedItems
             )
         );
+    }
+    
+    /**
+     * Sets model for this component.
+     * @param {BehaviorSettingsManager} behaviorSettingsManager
+     */
+    setModel( behaviorSettingsManager ) {
+        this._behaviorSettingsManager = behaviorSettingsManager;
     }
 }

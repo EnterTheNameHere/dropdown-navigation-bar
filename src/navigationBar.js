@@ -162,6 +162,8 @@ export class NavigationBar {
      *
      * @param  {function(event: {navigationBar: NavigationBar})} callback Function to invoke when Navigation bar is deactivated.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     *
+     * @throws {Error} if object is already disposed of.
      */
     onDidDeactivate( callback ) {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
@@ -204,6 +206,8 @@ export class NavigationBar {
      *
      * @param  {function(event: {navigationBar: NavigationBar})} callback Function to invoke when Navigation bar is activated.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     *
+     * @throws {Error} if object is already disposed of.
      */
     onDidActivate( callback ) {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
@@ -349,6 +353,8 @@ export class NavigationBar {
      * If none is selected, returns *null*.
      *
      * @return {Identifier|null} Selected identifier.
+     *
+     * @throws {Error} if object is already disposed of.
      */
     getSelectedIdentifier() {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
@@ -379,6 +385,8 @@ export class NavigationBar {
      *
      * @param  {function(event: {navigationBar: NavigationBar, selectedIdentifier: Identifier})} callback Function to invoke when selected Identifier changes.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     *
+     * @throws {Error} if object is already disposed of.
      */
     onDidChangeSelectedIdentifier( callback ) {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
@@ -391,6 +399,8 @@ export class NavigationBar {
      *
      * @param  {function(event: {navigationBar: NavigationBar, textEditor: TextEditor})} callback Function to invoke when active TextEditor changes.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
+     *
+     * @throws {Error} if object is already disposed of.
      */
     onDidChangeActiveTextEditor( callback ) {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
@@ -402,6 +412,8 @@ export class NavigationBar {
      * Returns {@link NavigationBarView} of this NavigationBar.
      *
      * @return {NavigationBarView} The view.
+     *
+     * @throws {Error} if object is already disposed of.
      */
     getView() {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
@@ -415,6 +427,8 @@ export class NavigationBar {
      *
      * @param  {TextEditor} textEditor
      * @return {IdentifierProvider|null} IdentifierProvider or null if none is available.
+     *
+     * @throws {Error} if object is already disposed of.
      */
     getProviderForTextEditor( textEditor ) {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
@@ -431,11 +445,25 @@ export class NavigationBar {
      * Returns active {@link TextEditor} or *undefined* if no {@link TextEditor} is active.
      * Returns *undefined* if NavigationBar is not active.
      * @return {TextEditor|undefined} TextEditor or undefined
+     *
+     * @throws {Error} if object is already disposed of.
      */
     getActiveTextEditor() {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
         if( !this._active ) return undefined;
         
         return this._activeEditor;
+    }
+    
+    /**
+     * Returns {@link BehaviorManager} of this NavigationBar instance.
+     * @return {BehaviorManager} BehaviorManager of this NavigationBar.
+     *
+     * @throws {Error} if object is already disposed of.
+     */
+    getBehaviorManager() {
+        if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
+        
+        return this._behaviorManager;
     }
 }

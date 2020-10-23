@@ -1,5 +1,6 @@
 /* global atom */
 
+import { Behavior } from './behaviors/behavior';
 import * as packageJSON from './../package.json';
 
 /**
@@ -11,7 +12,13 @@ import * as packageJSON from './../package.json';
  */
 export class BehaviorSettingsManager {
     /**
-     * Holds {@link BehaviorSettingsDataStructure}s for Behavior.
+     * Boolean representing if this BehaviorSettingsManager is disposed of.
+     * @type {boolean}
+     */
+    _disposed = false;
+    
+    /**
+     * Holds processed {@link BehaviorSettingsDataStructure}s for Behaviors.
      * @type {Map<Behavior,BehaviorSettingsDataStructure>}
      */
     _settings = new Map();
@@ -23,15 +30,37 @@ export class BehaviorSettingsManager {
     _watchBehaviorSettingsSubscriptions = new Map();
     
     /**
+     * Create new instance of {@link this}.
+     * @param {BehaviorManager} behaviorManager this instance will belong to.
+     */
+    constructor( behaviorManager ) {
+        this._behaviorManager = behaviorManager;
+    }
+    
+    /**
+     * Disposes of all resources owned by the instance of this class.
+     * If object has been disposed of, this method has no effect.
+     */
+    dispose() {
+        this._settings.clear();
+        
+        for( const [,value] of this._watchBehaviorSettingsSubscriptions ) {
+            value.dispose();
+        }
+        
+        this._disposed = true;
+    }
+    
+    /**
      * Registers Behavior's settings if it provides any.
-     * @param {Behavior} behavior Behavior with (optional) settings() function.
+     * If object has been disposed of, this method has no effect.
+     * @param {Behavior} behavior Behavior with settings() function.
      */
     registerBehavior( behavior ) {
-        if( typeof behavior.settings === 'function' ) {
-            const behaviorSettings = this.processBehaviorSettings( behavior );
-            this._settings.set( behavior, behaviorSettings );
-            
-            this.mapSettingsToAtomConfig( behaviorSettings );
+        if( this._disposed ) return;
+        
+        if( Behavior.checkInstanceIsBehavior( behavior ) ) {
+            this.processBehaviorSettings( behavior );
         }
     }
     
@@ -40,205 +69,113 @@ export class BehaviorSettingsManager {
      * @param {Behavior} behavior Behavior with (optional) settings() function.
      */
     unregisterBehavior( behavior ) {
+        // Won't hurt if run while disposed...
+        
         const disposeHandler = this._watchBehaviorSettingsSubscriptions.get( behavior );
         if( disposeHandler ) {
             disposeHandler.dispose();
             this._watchBehaviorSettingsSubscriptions.delete( behavior );
         }
-        this.settings.delete( behavior );
+        this._settings.delete( behavior );
     }
     
     /**
-     * Returns {@link BehaviorSettingsDataStructure}.
+     * Processes {@link BehaviorSettings}' config to internal representation.
+     * Has no effect if Behavior is not a valid {@link Behavior}.
+     * If object has been disposed of, this method has no effect.
      *
-     * @param  {Behavior} behavior             Must implement settings() function.
-     * @return {BehaviorSettingsDataStructure} Behavior's settings datastructure.
+     * @param {Behavior} behavior
+     *
+     * @private
      */
     processBehaviorSettings( behavior ) {
-        // Behavior's settings.
+        if( this._disposed ) return;
+        if( !Behavior.checkInstanceIsBehavior( behavior ) ) return;
+                
         const settings = behavior.settings();
+        const behaviorKey = settings.name.toLowerCase().split(' ').join('_'); // replace space with underscore
         
-        // Holds Behavior's settings processed to DataStructures.
-        const settingsItems = new Array();
+        const packageKey = `${packageJSON.name}.behaviors`;
         
-        // Settings could be stored as array...
-        // if( Array.isArray( settings ) ) {
-        //     if( settings.length > 0 ) {
-        //         for( const item of settings ) {
-        //             const itemDS = this.processItem( item );
-        //             if( itemDS ) settingsItems.push( itemDS );
-        //         }
-        //     }
-        // } else {
-        //     const itemDS = this.processItem( settings );
-        //     if( itemDS ) settingsItems.push( itemDS );
-        // }
-        //
-        // if( settingsItems.length === 0 ) {
-        //     throw new Error('Behavior settings must have at least one item!');
-        // }
+        const behaviorSettingsDS = {};
+        behaviorSettingsDS.behavior = behavior;
+        behaviorSettingsDS.configItems = [];
         
-        // FIX: it's temp now, until settings get implemented
-        settingsItems.push( { type: 'checkbox', keyPath: 'behaviors.temp', property: 'temp', temp: 'temp', default: true, desc: 'more temp desc' } );
+        if( typeof settings.config === 'object' ) {
+            for( const propertyName in settings.config ) {
+                if( !Object.prototype.hasOwnProperty.call( settings.config, propertyName ) ) continue;
+                
+                // We're accessing settings.config property, name of property is not known ahead of time...
+                // We are accessing known property names of this property.
+                // Checks are made as we go on.
+                const configItem = settings.config[propertyName]; // do not silence eslint
+                const processedConfigItem = {};
+                processedConfigItem.propertyName = propertyName;
+                processedConfigItem.keyPath = `${packageKey}.${behaviorKey}.${propertyName}`;
+                if( typeof configItem.title !== 'string' ) {
+                    atom.notifications.addError(`Config item of '${settings.name}' behavior has no title set! Title is text to display on settings popup dialog so it must be set for all config items!`);
+                    continue;
+                }
+                processedConfigItem.title = configItem.title;
+                
+                if( typeof configItem === 'object' ) {
+                    if( typeof configItem.type === 'string' ) {
+                        
+                        if( configItem.type === 'boolean' ) {
+                            processedConfigItem.type = 'boolean';
+                            
+                            // In case default is not present or not boolean, make it false by default
+                            if( typeof configItem.default !== 'boolean' ) {
+                                processedConfigItem.default = false;
+                            } else {
+                                processedConfigItem.default = configItem.default;
+                            }
+                            
+                            processedConfigItem.description = '';
+                            if( typeof configItem.description === 'string' ) {
+                                processedConfigItem.description = configItem.description;
+                            }
+                            
+                            behaviorSettingsDS.configItems.push( processedConfigItem );
+                        } else if( configItem.type === 'string' ) {
+                            processedConfigItem.type = 'string';
+                            
+                            // Do we have pre-set values?
+                            if( typeof processedConfigItem.enum === 'object' && Array.isArray( processedConfigItem.enum ) ) {
+                                
+                            }
+                        } else {
+                            atom.notifications.addWarning(`${settings.name} behavior has unexpected config item of ${configItem.type} type.`);
+                        }
+                    }
+                }
+            }
+        } else if( typeof settings.config !== 'undefined' ) {
+            // No config for this behavior
+            atom.notifications.addWarning(`${settings.name} behavior has unexpected config type, object is expected!`);
+        }
         
-        return { behavior: behavior, settingsItems: settingsItems };
+        this._settings.set( behavior, behaviorSettingsDS );
+        this.mapSettingsToAtomConfig( behaviorSettingsDS );
     }
     
     /**
-     * Returns {@link SettingsItemDataStructure}.
-     * @param  {object} settingsItem       Settings item from Behavior's settings.
-     * @return {SettingsItemDataStructure} Settings item's datastructure.
-     */
-    processItem( settingsItem ) {
-        if( !Object.prototype.hasOwnProperty.call( settingsItem, 'type' ) ) {
-            throw new Error('Settings item is missing "type" property! "type" defines type of settings item like checkbox etc.');
-        }
-        
-        if( settingsItem.type === 'group' ) {
-            return this.buildGroupDataStructure( settingsItem );
-        } else if( settingsItem.type === 'checkbox' ) {
-            return this.buildCheckboxDataStructure( settingsItem );
-        }
-        
-        throw new Error(`Settings item has unknown type! ${settingsItem.type}`);
-    }
-    
-    /**
-     * Returns {@link SettingsGroupDataStructure}.
-     * @example
-     * return {
-     *     type: 'group',
-     *     text: 'What will be displayed in header',
-     *     items: {
-     *         // more settings items here
-     *     }
-     * }
-     * @param {object} group Settings group from Behavior's settings.
-     * @param {string} group.type  Equals "group".
-     * @param {string} group.text  Text to show as header to group of controls.
-     * @param {array}  group.items Array of settings items to group together.
-     * @returns {SettingsGroupDataStructure} Group datastructure.
-     */
-    buildGroupDataStructure( group ) {
-        if( group.type === 'group' ) {
-            // Group must have text to display in header
-            if( !Object.prototype.hasOwnProperty.call( group, 'text' ) ) {
-                throw new Error('group is missing "text" property! "text" specifies text to show as header to group of controls.');
-            }
-            
-            // Group must have group of settings under it...
-            if( !Object.prototype.hasOwnProperty.call( group, 'items' ) ) {
-                throw new Error('group is missing "items" property! "items" specifies array of settings items to group together.');
-            }
-            
-            if( !Array.isArray( group.items ) ) {
-                throw new Error('group items property is expected to be an array!');
-            }
-            
-            const groupItems = new Array();
-            for( const item of group.items ) {
-                const itemDS = this.processItem( item );
-                if( itemDS ) groupItems.push( itemDS );
-            }
-            
-            return { type: 'group', text: group.text, items: groupItems };
-        }
-        
-        throw new Error(`Settings group is expected, but type "${group.type}" received!`);
-    }
-    
-    /**
-     * Returns settings checkbox datastructure.
-     * @example
-     * return {
-     *     type: 'checkbox',
-     *     keyPath: 'behaviorName.settingName',
-     *     property: 'BehaviorPropertyName'
-     *     text: 'text to display',
-     *     desc: 'description to show if user hover over text', // optional
-     *     default: true | false // optional; false is default
-     * }
-     * @param {object}  checkbox Settings checkbox from Behavior's settings.
-     * @param {string}  checkbox.type            Equals "checkbox".
-     * @param {string}  checkbox.keyPath         Atom config key path under which the checkbox's value is stored.
-     * @param {string}  checkbox.property        Name of property of Behavior object instance which maps to checkbox value.
-     * @param {string}  checkbox.text            Text to show next to checkbox.
-     * @param {boolean} [checkbox.default=false] Default value.
-     * @param {string}  [checkbox.desc]          Text to show if user hovers over checkbox's text. Should be used to give more details.
-     * @return {SettingsItemDataStructure} Checkbox datastructure.
-     */
-    buildCheckboxDataStructure( checkbox ) {
-        if( checkbox.type === 'checkbox' ) {
-            // Settings must have keyPath mapping to atom config key...
-            if( !Object.prototype.hasOwnProperty.call( checkbox, 'keyPath' ) ) {
-                throw new Error('checkbox is missing "keyPath" property! "keyPath" specifies atom config '
-                + 'key path under which the checkbox\'s value is stored.');
-            }
-            
-            // Settings must have property of Behavior instance it will map to...
-            if( !Object.prototype.hasOwnProperty.call( checkbox, 'property' ) ) {
-                throw new Error('checkbox is missing "property" property! "property" specifies name of property '
-                + 'of Behavior object instance which maps to checkbox value.');
-            }
-            
-            // Without text the checkbox kinda have no useful meaning...
-            if( !Object.prototype.hasOwnProperty.call( checkbox, 'text' ) ) {
-                throw new Error('checkbox is missing "text" property! "text" specifies text to show next to checkbox.');
-            }
-            
-            // false is default value
-            const defaultValue = Object.prototype.hasOwnProperty.call( checkbox, 'default' ) ? checkbox.default : false;
-            const description = Object.prototype.hasOwnProperty.call( checkbox, 'desc' ) ? checkbox.desc : '';
-            
-            // keyPath is expected to begin with
-            let startAt = 0;
-            let keyPath = '';
-            // 'dropdown-navigation-bar'
-            if( checkbox.keyPath.startsWith( packageJSON.name ) ) {
-                startAt = packageJSON.name.length + 1;
-            }
-            keyPath += `${packageJSON.name}.`;
-            // followed by 'behaviors'
-            if( checkbox.keyPath.startsWith( 'behavior.' , startAt )) {
-                // Use plural...
-                startAt += 9;
-            } else if( checkbox.keyPath.startsWith( 'behaviors.', startAt )) {
-                startAt += 10;
-            }
-            keyPath += 'behaviors.';
-            // and then the Behavior's settings item keyPath itself
-            keyPath += checkbox.keyPath.substring( startAt );
-            
-            return {
-                type: 'checkbox',
-                keyPath: keyPath,
-                property: checkbox.property,
-                text: checkbox.text,
-                default: defaultValue,
-                desc: description
-            };
-        }
-        
-        throw new Error(`Settings checkbox is expected, but type "${checkbox.type}" received!`);
-    }
-    
-    /**
-     * Maps settings items to atom config key paths.
+     * Maps config items to atom config key paths.
+     * If object has been disposed of, this method has no effect.
      * @param {BehaviorSettingsDataStructure} behaviorSettings Behavior Settings datastructure.
      */
     mapSettingsToAtomConfig( behaviorSettings ) {
+        if( this._disposed ) return;
+        
         const behavior = behaviorSettings.behavior;
-        for( const item of behaviorSettings.settingsItems ) {
-            // Skip group
-            if( item.type === 'group' ) continue;
-            
+        for( const item of behaviorSettings.configItems ) {
             // First we load the setting from atom's config...
-            behavior[item.property] = atom.config.get( item.keyPath, item.default );
+            behavior[item.propertyName] = atom.config.get( item.keyPath, item.default );
             
             // Watch for change of setting
             this._watchBehaviorSettingsSubscriptions.set( behavior,
                 atom.config.onDidChange( item.keyPath, ({ newValue }) => {
-                    behavior[item.property] = newValue;
+                    behavior[item.propertyName] = newValue;
                     if( typeof behavior.settingsChanged === 'function' ) {
                         behavior.settingsChanged();
                     }
@@ -246,31 +183,32 @@ export class BehaviorSettingsManager {
             );
         }
     }
+    
+    /**
+     * Returns processed settings.
+     * @return {Map<Behavior,BehaviorSettingsDataStructure>} contains processed settings.
+     */
+    getSettings() {
+        return this._settings;
+    }
 }
 
 
 /**
  * @typedef {Object} BehaviorSettingsDataStructure
- * @property {Object} behavior
- * @property {Array<SettingsItemDataStructure>} settingsItems
+ * @property {Object} behavior    Behavior instance this datastructure was processed from.
+ * @property {string} behaviorKey Name of Behavior which can be used in Atom config key path.
+ * @property {Array<ConfigItemDataStructure>} configItems
  * @private
  */
 
 /**
- * @typedef {Object} SettingsItemDataStructure
- * @property {string}  type      "checkbox"
- * @property {string}  keyPath   Atom config key path under which the items's value is stored.
- * @property {string}  property  Name of property of Behavior object instance which maps to item's value.
- * @property {string}  text      Text to show next to checkbox.
- * @property {boolean} default   Default value.
- * @property {string}  desc      Text to show if user hovers over item's text. Should be used to give more details.
- * @private
- */
-
-/**
- * @typedef {Object} SettingsGroupDataStructure
- * @property {string}                           type        Equals "group"
- * @property {string}                           text        Text to show as header to group of controls.
- * @property {Array<SettingsItemDataStructure>} items Array of settings items to group together.
+ * @typedef {Object} ConfigItemDataStructure
+ * @property {string}  type         "checkbox"
+ * @property {string}  keyPath      Atom config key path under which the items's value is stored.
+ * @property {string}  propertyName Name of property of Behavior object instance which maps to item's value.
+ * @property {string}  title        Text to show next to checkbox.
+ * @property {boolean} default      Default value.
+ * @property {string}  description  Text to show if user hovers over item's text. Should be used to give more details.
  * @private
  */
