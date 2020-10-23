@@ -71,6 +71,10 @@
                 color: @syntax-text-color;
             }
         }
+        
+        &:empty:before {
+            content: '\200b';
+        }
     }
 
     .debug {
