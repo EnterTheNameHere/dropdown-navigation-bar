@@ -2,7 +2,22 @@
     "source": "./src",
     "destination": "./docs",
     "plugins": [
-        { "name": "esdoc-standard-plugin" },
+        {
+            "name": "esdoc-standard-plugin",
+            "option": {
+                "brand": {
+                    "title": "dropdown-navigation-bar",
+                    "description": "Navigation bar for Atom"
+                },
+                "manual": {
+                    "index": "./manual/index.md",
+                    "globalIndex": false,
+                    "files": [
+                        "./manual/behaviorSettings.md"
+                    ]
+                }
+            }
+        },
         { "name": "esdoc-ecmascript-proposal-plugin", "option": { "all": true } }
     ]
 }
