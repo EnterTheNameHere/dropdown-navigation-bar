@@ -354,7 +354,7 @@ export class NavigationBar {
             // New TextEditor is active
             this._activeTextEditor = textEditor;
             this._providerForActiveTextEditor = this.getProviderForTextEditor( textEditor );
-            this._selectedIdentifier = this._providerForActiveTextEditor.getIdentifierForPosition( textEditor.getCursorBufferPosition() );
+            this._selectedIdentifier = this._providerForActiveTextEditor?.getIdentifierForPosition( textEditor.getCursorBufferPosition() ) ?? null;
         } else {
             // Same TextEditor instance is active...
         }
