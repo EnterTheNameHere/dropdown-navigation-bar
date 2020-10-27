@@ -58,7 +58,7 @@ export class NavigationBarView {
     update( newProps = {}/*, newChildren = {}*/ ) {
         this._props = {...this._props, ...newProps};
 
-
+        this._props.navigationBar.update();
 
         return etch.update(this);
     }

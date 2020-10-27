@@ -5,58 +5,60 @@ import { dom as $, default as etch } from 'etch';
 import { BehaviorManagerEmitter } from './../behaviorManagerEmitter';
 import { Identifier, EmptyIdentifier } from './../identifiers';
 
-//import { logged } from './../debug';
-
 etch.setScheduler(atom.views);
 
+/**
+ * Behavior populating DropdownBoxes with {@link Identifier}s when active {@link TextEditor} changes or
+ * new {@link Identifier} is selected on DropdownBox.
+ *
+ * @implements {Behavior}
+ */
 export class DisplayIdentifiersOnDropdownBoxes {
     /**
-     * Holds instance of BehaviorManager this Behavior is connected to.
+     * Holds instance of {@link BehaviorManager} this Behavior is connected to.
      * @type {BehaviorManager}
+     *
+     * @private
      */
     _behaviorManager = null;
     
     /**
-     * Boolean value representing whether Behavior is active.
+     * Boolean value representing whether this behavior is active, that is if it should perform it's behavior.
      * @type {boolean}
+     *
+     * @private
      */
     _behaviorActive = false;
     
     /**
      * Holds subscriptions of this Behavior.
      * @type {CompositeDisposable}
+     *
+     * @private
      */
     _subscriptions = null;
     
     /**
      * Holds instance of custom event Emitter.
      * @type {BehaviorManagerEmitter}
+     *
+     * @private
      */
     _emitter = new BehaviorManagerEmitter();
     
     /**
-     * Boolean value representing whether this Behavior is disposed of.
+     * Boolean value representing whether this behavior is disposed of. It is not safe to change state of disposed object.
      * @type {boolean}
+     *
+     * @private
      */
     _disposed = false;
     
     /**
-     * Subscription to {@link BehaviorManager}'s `did-change-selected-identifier` event. Changes when Atom's active
-     * {@link TextEditor} changes.
-     * @type {Disposable}
-     */
-    _subscriptionToOnDidChangeSelectedIdentifier = null;
-    
-    /**
-     * Boolean value setting if Cursor should be moved to selected {@link Identifier} when user selects
-     * {@link Identifier} at {@link DropdownBox}.
-     * @type {boolean}
-     */
-    moveCursorToSelectedIdentifier = false;
-    
-    /**
      * Boolean value setting if {@link Identifier}'s debug information should be displayed with it's name.
      * @type {boolean}
+     *
+     * @private
      */
     displayDebugInformation = false;
     
@@ -71,7 +73,6 @@ export class DisplayIdentifiersOnDropdownBoxes {
     /**
      * Releases resources held by this object.
      */
-    //@logged
     dispose() {
         // Won't hurt if run even when object is already disposed of...
         
@@ -89,55 +90,12 @@ export class DisplayIdentifiersOnDropdownBoxes {
      * Behavior contract function. Called when Behavior can perform it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     activateBehavior() {
         if( this._disposed ) return;
         if( this._behaviorActive ) return;
         
         this._behaviorActive = true;
         
-        /*
-        const view = this._behaviorManager.getNavigationBarView();
-        const leftDropdownBox = view.getLeftDropdownBox();
-        const rightDropdownBox = view.getRightDropdownBox();
-        
-        this._subscriptions.add(
-            leftDropdownBox.onDidChangeSelected( ( ev ) => {
-                const navigationBar = this._behaviorManager.getNavigationBar();
-                navigationBar.setSelectedIdentifier( ev.item );
-                const pos = ev.item.getStartPosition();
-                if( pos ) {
-                    ev.item.getTextEditor().setCursorBufferPosition( pos );
-                }
-            })
-        );
-        
-        this._subscriptions.add(
-            rightDropdownBox.onDidChangeSelected( ( ev ) => {
-                const navigationBar = this._behaviorManager.getNavigationBar();
-                navigationBar.setSelectedIdentifier( ev.item );
-                const pos = ev.item instanceof EmptyIdentifier
-                    ? ev.item.getEndPosition()
-                    : ev.item.getStartPosition();
-                if( pos ) {
-                    ev.item.getTextEditor().setCursorBufferPosition( pos );
-                }
-            })
-        );
-        
-        this._subscriptions.add(
-            this._behaviorManager.onDidChangeActiveTextEditor( () => {
-                this.updateDropdownBoxes();
-            }, this )
-        );
-        
-        this._subscriptions.add(
-            this._behaviorManager.onDidChangeSelectedIdentifier( () => {
-                this.updateDropdownBoxes();
-            }, this )
-        );
-        */
-       
         this.registerListeners();
         
         this.updateDropdownBoxes();
@@ -147,7 +105,6 @@ export class DisplayIdentifiersOnDropdownBoxes {
      * Behavior contract function. Called when Behavior must stop performing it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     deactivateBehavior() {
         // Won't hurt to run even when already disposed of...
         
@@ -159,6 +116,8 @@ export class DisplayIdentifiersOnDropdownBoxes {
     /**
      * Registers listeners required for this Behavior's function.
      * If object has been disposed of, this method has no effect.
+     *
+     * @private
      */
     registerListeners() {
         if( this._disposed ) return;
@@ -186,6 +145,8 @@ export class DisplayIdentifiersOnDropdownBoxes {
     
     /**
      * Unregisters listeners registered with {@link this#registerListeners}.
+     *
+     * @private
      */
     unregisterListeners() {
         // Won't hurt running even when object is already disposed of...
@@ -238,7 +199,6 @@ export class DisplayIdentifiersOnDropdownBoxes {
      *
      * @emits {will-update-dropdown-boxes}
      */
-    //@logged
     updateDropdownBoxes() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -398,23 +358,29 @@ export class DisplayIdentifiersOnDropdownBoxes {
         };
         
         // Event is sent to subscribers allowing them to change the parentIdentifiers and childrenIdentifiers, so after
-        // all subscribers' callbacks have been called, use the these to update dropdown boxes!
-        const willUpdateDropdownBoxesEvent = { parentIdentifiers: parentIdentifiers, childrenIdentifiers: childrenIdentifiers };
+        // all subscribers' callbacks have been called, use the these to update dropdown boxes! If you change order
+        // of identifiers, make sure to update Selected indexes too!
+        const willUpdateDropdownBoxesEvent = {
+            parentIdentifiers: parentIdentifiers,
+            childrenIdentifiers: childrenIdentifiers,
+            parentSelectedIndex: parentSelectedIndex,
+            childrenSelectedIndex: childrenSelectedIndex
+        };
         
         const emitFunction = async () => {
             await this._emitter.emit(
                 'will-update-dropdown-boxes',
                 willUpdateDropdownBoxesEvent
             );
-            
+
             view.getLeftDropdownBox().update({
                 items: willUpdateDropdownBoxesEvent.parentIdentifiers, // using parentIdentifiers from event is intentional!
-                selectedIndex: parentSelectedIndex,
+                selectedIndex: willUpdateDropdownBoxesEvent.parentSelectedIndex,
                 itemRenderer: renderItem,
             });
             view.getRightDropdownBox().update({
                 items: willUpdateDropdownBoxesEvent.childrenIdentifiers, // using childrenIdentifiers from event is intentional!
-                selectedIndex: childrenSelectedIndex,
+                selectedIndex: willUpdateDropdownBoxesEvent.childrenSelectedIndex,
                 itemRenderer: renderItem,
             });
             
@@ -432,7 +398,6 @@ export class DisplayIdentifiersOnDropdownBoxes {
      *
      * @return {object} Schema of Behavior's settings.
      */
-    //@logged
     settings() {
         return {
             name: 'Display identifiers on dropdown boxes',
@@ -453,7 +418,6 @@ export class DisplayIdentifiersOnDropdownBoxes {
      * perform update right after settings are changed.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     settingsUpdated() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;

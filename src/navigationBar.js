@@ -4,7 +4,7 @@ import { CompositeDisposable, Emitter } from 'atom'; // eslint-disable-line impo
 import { ProviderRegistry } from './providerRegistry';
 import { BehaviorManager } from './behaviorManager';
 import { DisplayIdentifiersOnDropdownBoxes } from './behaviors/displayIdentifiersOnDropdownBoxes';
-import { SortIdentifiersByAlphabet } from './behaviors/sortIdentifiersByAlphabet';
+import { SortIdentifiersOnDropdownBoxes } from './behaviors/sortIdentifiersOnDropdownBoxes';
 import { SelectIdentifierAtCursorPosition } from './behaviors/selectIdentifierAtCursorPosition';
 import { JumpToIdentifierWhenItIsSelectedOnDropdownBox } from './behaviors/jumpToIdentifierWhenItIsSelectedOnDropdownBox';
 
@@ -59,7 +59,7 @@ export class NavigationBar {
      *
      * @private
      */
-    _activeEditor = undefined;
+    _activeTextEditor = undefined;
     
     /**
      * Holds instance of {@link InstanceProvider} for atom's active TextEditor.
@@ -114,8 +114,10 @@ export class NavigationBar {
         const displayIdentifiersBehavior = new DisplayIdentifiersOnDropdownBoxes( this._behaviorManager );
         this._behaviorManager.registerBehavior( displayIdentifiersBehavior );
         this._behaviorManager.registerBehavior( new SelectIdentifierAtCursorPosition( this._behaviorManager, displayIdentifiersBehavior ) );
-        this._behaviorManager.registerBehavior( new SortIdentifiersByAlphabet( this._behaviorManager, displayIdentifiersBehavior) );
+        this._behaviorManager.registerBehavior( new SortIdentifiersOnDropdownBoxes( this._behaviorManager, displayIdentifiersBehavior) );
         this._behaviorManager.registerBehavior( new JumpToIdentifierWhenItIsSelectedOnDropdownBox( this._behaviorManager ) );
+        
+        this.update();
     }
 
     /**
@@ -182,7 +184,7 @@ export class NavigationBar {
         
         this.unregisterOnDidChangeSelected();
         this.unregisterObserveActiveTextEditor();
-        this._activeEditor = undefined;
+        this._activeTextEditor = undefined;
         this._providerForActiveTextEditor = null;
         this._selectedIdentifier = null;
     }
@@ -223,8 +225,8 @@ export class NavigationBar {
         if( this._disposed ) return;
         this._active = true;
         
-        this._activeEditor = atom.workspace.getActiveTextEditor();
-        this._providerForActiveTextEditor = this.getProviderForTextEditor( this._activeEditor );
+        this._activeTextEditor = atom.workspace.getActiveTextEditor();
+        this._providerForActiveTextEditor = this.getProviderForTextEditor( this._activeTextEditor );
         this._selectedIdentifier = null;
         this.registerObserveActiveTextEditor();
         this.registerOnDidChangeSelected();
@@ -261,33 +263,10 @@ export class NavigationBar {
         this._observeActiveTextEditorSubscription = atom.workspace.observeActiveTextEditor( (textEditor) => {
             if( textEditor === undefined ) {
                 // No TextEditor is curretly active
-                this._activeEditor = undefined;
-                this._providerForActiveTextEditor = null;
-                this._selectedIdentifier = null;
-                
-                if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
-                this._activeEditorSubscriptions = null;
-
-                this._emitter.emit( 'did-change-active-text-editor', { navigationBar: this, textEditor: textEditor } );
-            } else if ( this._activeEditor !== textEditor ) {
+                this.setActiveTextEditor( undefined );
+            } else if ( this.getActiveTextEditor() !== textEditor ) {
                 // Different TextEditor is now active
-                this._activeEditor = textEditor;
-                this._providerForActiveTextEditor = this.getProviderForTextEditor( textEditor );
-                this._selectedIdentifier = null;
-                
-                if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
-                this._activeEditorSubscriptions = new CompositeDisposable();
-                
-                this._activeEditorSubscriptions.add( textEditor.onDidSave( () => {
-                    if( this._providerForActiveTextEditor ) this._providerForActiveTextEditor.generateIdentifiers();
-                }));
-                this._activeEditorSubscriptions.add( textEditor.onDidChangeGrammar( () => {
-                    if( this._providerForActiveTextEditor ) this._providerForActiveTextEditor.generateIdentifiers();
-                }));
-
-                
-                if( this._providerForActiveTextEditor ) this._providerForActiveTextEditor.generateIdentifiers();
-                this._emitter.emit( 'did-change-active-text-editor', { navigationBar: this, textEditor: textEditor } );
+                this.setActiveTextEditor( textEditor );
             }
             // Same TextEditor. Don't know why it would be fired with same TextEditor though.
         });
@@ -310,6 +289,79 @@ export class NavigationBar {
             this._observeActiveTextEditorSubscription.dispose();
         }
         this._observeActiveTextEditorSubscription = null;
+    }
+    
+    /**
+     * Starts listening to events of active {@link TextEditor}.
+     * If no {@link TextEditor} is set as active, method has no effect.
+     * If object has been disposed of, this method has no effect.
+     *
+     * @private
+     */
+    registerListenersForActiveTextEditorEvents() {
+        if( this._disposed ) return;
+        if( !this._active ) return;
+        
+        if( this._activeTextEditor ) {
+            this._activeEditorSubscriptions = new CompositeDisposable();
+            
+            this._activeEditorSubscriptions.add( this._activeTextEditor.onDidSave( () => {
+                if( this._providerForActiveTextEditor ) this._providerForActiveTextEditor.generateIdentifiers();
+            }));
+            
+            this._activeEditorSubscriptions.add( this._activeTextEditor.onDidChangeGrammar( () => {
+                if( this._providerForActiveTextEditor ) this._providerForActiveTextEditor.generateIdentifiers();
+            }));
+            
+            if( this._providerForActiveTextEditor ) this._providerForActiveTextEditor.generateIdentifiers();
+        }
+    }
+    
+    /**
+     * Unregisters listeners registered with {@link #registerListenersForActiveTextEditorEvents}.
+     *
+     * @private
+     */
+    unregisterEventListenersForActiveTextEditorEvents() {
+        // Doesn't hurt to run even if disposed of...
+        if( this._activeEditorSubscriptions ) this._activeEditorSubscriptions.dispose();
+        this._activeEditorSubscriptions = null;
+    }
+    
+    /**
+     * Sets new active {@link TextEditor}. Clears listeners and then registers new listeners for events fired by
+     * `textEditor`. If `textEditor` is **undefined**, function only clears the listeners, since there's no
+     * {@link TextEditor} to register new listeners with.
+     * If object has been disposed of, this method has no effect.
+     *
+     * @fires `did-change-active-text-editor`
+     *
+     * @private
+     */
+    setActiveTextEditor( textEditor ) {
+        if( this._disposed ) return;
+        if( !this._active ) return;
+        
+        this.unregisterEventListenersForActiveTextEditorEvents();
+        
+        if( textEditor === undefined ) {
+            // No TextEditor is active
+            this._activeTextEditor = undefined;
+            this._providerForActiveTextEditor = null;
+            this._selectedIdentifier = null;
+        }
+        else if( this._activeTextEditor !== textEditor ) {
+            // New TextEditor is active
+            this._activeTextEditor = textEditor;
+            this._providerForActiveTextEditor = this.getProviderForTextEditor( textEditor );
+            this._selectedIdentifier = this._providerForActiveTextEditor.getIdentifierForPosition( textEditor.getCursorBufferPosition() );
+        } else {
+            // Same TextEditor instance is active...
+        }
+        
+        this.registerListenersForActiveTextEditorEvents();
+        
+        this._emitter.emit( 'did-change-active-text-editor', { navigationBar: this, textEditor: textEditor } );
     }
     
     /**
@@ -407,6 +459,18 @@ export class NavigationBar {
         
         return this._emitter.on( 'did-change-active-text-editor', callback );
     }
+    
+    /**
+     * Performs complete update. Will reload active {@link TextEditor}, {@link IdentifierProvider} which fires
+     * corresponding events... Use when you want to manually request an update. Preserves cursor position.
+     * If object has been disposed of, this method has no effect.
+     */
+    update() {
+        if( this._disposed ) return;
+        if( !this._active ) return;
+        
+        this.setActiveTextEditor( atom.workspace.getActiveTextEditor() );
+    }
 
     /**
      * Returns {@link NavigationBarView} of this NavigationBar.
@@ -452,7 +516,7 @@ export class NavigationBar {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
         if( !this._active ) return undefined;
         
-        return this._activeEditor;
+        return this._activeTextEditor;
     }
     
     /**

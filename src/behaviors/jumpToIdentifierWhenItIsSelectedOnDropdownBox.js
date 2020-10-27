@@ -2,9 +2,14 @@
 import { DisplayIdentifiersOnDropdownBoxes } from './displayIdentifiersOnDropdownBoxes';
 import { EmptyIdentifier } from './../identifiers/emptyIdentifier';
 
+/**
+ * Behavior moving {@link TextEditor}'s cursor to {@link Identifier} user selects on DropdownBox.
+ *
+ * @implements {Behavior}
+ */
 export class JumpToIdentifierWhenItIsSelectedOnDropdownBox {
     /**
-     * Holds instance of {@link BehaviorManager} this behavior is registered with.
+     * Holds instance of {@link BehaviorManager} this Behavior is connected to.
      * @type {BehaviorManager}
      *
      * @private
@@ -28,7 +33,7 @@ export class JumpToIdentifierWhenItIsSelectedOnDropdownBox {
     _behaviorActive = false;
     
     /**
-     * Subscription to {@link BehaviorManager}'s `did-change-selected-identifier` event.
+     * Subscription to listener to {@link BehaviorManager}'s `did-change-selected-identifier` event.
      * @type {Disposable|null}
      */
     _subscriptionToOnDidChangeSelectedIdentifier = null;
@@ -137,7 +142,6 @@ export class JumpToIdentifierWhenItIsSelectedOnDropdownBox {
      *
      * @return {object} Schema of Behavior's settings.
      */
-    //@logged
     settings() {
         return {
             name: 'Jump to identifier when it is selected on dropdown box'

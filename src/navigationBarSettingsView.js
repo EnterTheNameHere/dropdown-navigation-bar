@@ -117,9 +117,42 @@ export class NavigationBarSettingsView {
         }
     }
     
+    renderRadio( configItem ) {
+        const selectedValue = atom.config.get( configItem.keyPath ) ?? configItem.default;
+        
+        const availableValues = [];
+        if( configItem.predefinedValues ) {
+            for( const enumItem of configItem.predefinedValues ) {
+                const valueId = `${configItem.keyPath}.${enumItem.value}`;
+                availableValues.push( $.li( {},
+                    $.input({
+                        id:      String( valueId ),
+                        name:    String( configItem.keyPath ),
+                        type:    'radio',
+                        value:   String( enumItem.value ),
+                        checked: selectedValue === enumItem.value,
+                        on: {
+                            change: (changeEvent) => {
+                                atom.config.set( configItem.keyPath, changeEvent.target.value );
+                                this._props.navigationBarView.update();
+                            }
+                        }
+                    }),
+                    $.label({
+                        htmlFor: String( valueId )
+                    },           String( enumItem.value ))
+                ));
+            }
+        }
+        return $.li( {},
+            $.div( {}, configItem.title ),
+            $.ol( {}, ...availableValues )
+        );
+    }
+    
     renderCheckbox( configItem ) {
-        const checked = atom.config.get( configItem.keyPath, configItem.default );
-        return [
+        const checked = atom.config.get( configItem.keyPath ) ?? configItem.default;
+        return $.li( {},
             $.input({
                 id:      String( configItem.keyPath ),
                 name:    String( configItem.keyPath ),
@@ -138,7 +171,7 @@ export class NavigationBarSettingsView {
                 htmlFor: String( configItem.keyPath ),
                 class:   'input-label'
             },           String( configItem.title ))
-        ];
+        );
     }
     
     prerender() {
@@ -147,6 +180,10 @@ export class NavigationBarSettingsView {
             for( const configItem of behaviorSettings.configItems ) {
                 if( configItem.type === 'boolean' ) {
                     this._renderedItems.push( this.renderCheckbox( configItem ) );
+                } else if( typeof configItem.desiredRepresentation === 'string' ) {
+                    if( configItem.desiredRepresentation === 'radio' ) {
+                        this._renderedItems.push( this.renderRadio( configItem ) );
+                    }
                 }
             }
         }

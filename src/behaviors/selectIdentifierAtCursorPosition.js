@@ -1,22 +1,72 @@
 
 import { DisplayIdentifiersOnDropdownBoxes } from './displayIdentifiersOnDropdownBoxes';
-import { SortIdentifiersByAlphabet } from './sortIdentifiersByAlphabet';
+import { SortIdentifiersOnDropdownBoxes } from './sortIdentifiersOnDropdownBoxes';
 
-//import { logged } from './../debug';
-
+/**
+ * Behavior selecting {@link Identifier} under {@link TextEditor}'s cursor if it's available on DropdownBoxes.
+ * If cursor is inside a method, it will select corresponding method {@link Identifier} on DropdownBox.
+ *
+ * @implements {Behavior}
+ */
 export class SelectIdentifierAtCursorPosition {
-    _disposed = false;
+    /**
+     * Holds instance of {@link BehaviorManager} this Behavior is connected to.
+     * @type {BehaviorManager}
+     *
+     * @private
+     */
     _behaviorManager = null;
-    _displayIdentifiersOnDropdownBoxes = null;
-    _observeActiveTextEditorSubscription = null;
-    _didChangeCursorPositionListenerSubscription = null;
-    _didUpdateDropdownBoxesSubscription = null;
+    
+    /**
+     * Boolean value representing whether this behavior is active, that is if it should perform it's behavior.
+     * @type {boolean}
+     *
+     * @private
+     */
     _behaviorActive = false;
+    
+    /**
+     * Boolean value representing whether this behavior is disposed of. It is not safe to change state of disposed object.
+     * @type {boolean}
+     *
+     * @private
+     */
+    _disposed = false;
+    
+    /**
+     * Holds instance of {@link DisplayIdentifiersOnDropdownBoxes} this Behavior is connected to.
+     * @type {DisplayIdentifiersOnDropdownBoxes}
+     */
+    _displayIdentifiersOnDropdownBoxes = null;
+    
+    /**
+     * Subscription to {@link BehaviorManager}'s `did-change-active-text-editor` event.
+     * @type {Disposable}
+     */
+    _observeActiveTextEditorSubscription = null;
+    
+    /**
+     * Subscription to listener to active {@link TextEditor}'s `did-change-cursor-position` event.
+     * @type {Disposable}
+     */
+    _didChangeCursorPositionListenerSubscription = null;
+    
+    /**
+     * Subscription to listener to {@link DisplayIdentifiersOnDropdownBoxes}'s `will-update-dropdown-boxes` event.
+     * @type {Disposable}
+     */
+    _didUpdateDropdownBoxesSubscription = null;
+    
+    /**
+     * Holds instance to active {@link TextEditor}.
+     * @type {TextEditor}
+     */
     _currentActiveTextEditor = null;
     
     /**
      * Creates new instance.
      * @param {BehaviorManager} behaviorManager
+     * @param {DisplayIdentifiersOnDropdownBoxes} displayIdentifiersOnDropdownBoxes
      */
     constructor( behaviorManager, displayIdentifiersOnDropdownBoxes ) {
         if( !behaviorManager ) throw Error('behaviorManager argument is required!');
@@ -30,7 +80,6 @@ export class SelectIdentifierAtCursorPosition {
      * Behavior contract function. Behavior is told it can perform it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     activateBehavior() {
         if( this._disposed ) return;
         if( this._behaviorActive ) return;
@@ -46,7 +95,6 @@ export class SelectIdentifierAtCursorPosition {
      * Behavior contract function. Behavior is told it must stop performing it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     deactivateBehavior() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -62,7 +110,6 @@ export class SelectIdentifierAtCursorPosition {
      * Releases resources held by this object.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     dispose() {
         // Run even if disposed, won't hurt...
         
@@ -88,7 +135,7 @@ export class SelectIdentifierAtCursorPosition {
                 this.selectIdentifierAtPosition();
             },
             this,
-            { after: SortIdentifiersByAlphabet }
+            { after: SortIdentifiersOnDropdownBoxes }
         );
     }
     
@@ -114,7 +161,6 @@ export class SelectIdentifierAtCursorPosition {
      *
      * @private
      */
-    //@logged
     registerDidChangeCursorPositionListener() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -135,7 +181,6 @@ export class SelectIdentifierAtCursorPosition {
      *
      * @private
      */
-    //@logged
     unregisterDidChangeCursorPositionListener() {
         // Run even if disposed, won't hurt...
         
@@ -152,7 +197,6 @@ export class SelectIdentifierAtCursorPosition {
      *
      * @private
      */
-    //@logged
     startObservingChangeOfActiveTextEditor() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -171,7 +215,7 @@ export class SelectIdentifierAtCursorPosition {
                 }
             },
             this,
-            { before: DisplayIdentifiersOnDropdownBoxes, after: SortIdentifiersByAlphabet }
+            { before: DisplayIdentifiersOnDropdownBoxes, after: SortIdentifiersOnDropdownBoxes }
         );
     }
     
@@ -181,7 +225,6 @@ export class SelectIdentifierAtCursorPosition {
      *
      * @private
      */
-    //@logged
     stopObservingChangeOfActiveTextEditor() {
         // Run even if disposed, won't hurt...
         
@@ -221,7 +264,6 @@ export class SelectIdentifierAtCursorPosition {
      *
      * @return {object} Schema of Behavior's settings.
      */
-    //@logged
     settings() {
         return {
             name: 'Select identifier at cursor position'

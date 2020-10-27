@@ -1,14 +1,49 @@
 
-import { TopScopeIdentifier, EmptyIdentifier } from '../identifiers';
+import { TopScopeIdentifier, EmptyIdentifier, Identifier } from '../identifiers';
 
-//import { logged } from './../debug';
-
-export class SortIdentifiersByAlphabet {
+/**
+ * Behavior giving options to sort {@link Identifier}s on DropdownBoxes by file position or alphabet.
+ * Left and right DropdownBox has option separate, allowing to choose sorting mode for both DropdownBoxes
+ * independently.
+ *
+ * @implements {Behavior}
+ */
+export class SortIdentifiersOnDropdownBoxes {
+    /**
+     * Holds instance of {@link BehaviorManager} this Behavior is connected to.
+     * @type {BehaviorManager}
+     *
+     * @private
+     */
     _behaviorManager = null;
-    _displayIdentifiersOnDropdownBoxes = null;
-    _listenToWillUpdateDropdownBoxesSubscription = null;
+    
+    /**
+     * Boolean value representing whether this behavior is active, that is if it should perform it's behavior.
+     * @type {boolean}
+     *
+     * @private
+     */
     _behaviorActive = false;
+    
+    /**
+     * Boolean value representing whether this behavior is disposed of. It is not safe to change state of disposed object.
+     * @type {boolean}
+     *
+     * @private
+     */
     _disposed = false;
+    
+    /**
+     * Holds instance of {@link DisplayIdentifiersOnDropdownBoxes} this Behavior is connected to.
+     * @type {DisplayIdentifiersOnDropdownBoxes}
+     */
+    _displayIdentifiersOnDropdownBoxes = null;
+    
+    /**
+     * Subscription to listener to {@link DisplayIdentifiersOnDropdownBoxes}'s `will-update-dropdown-boxes` event.
+     * @type {Disposable}
+     */
+    _listenToWillUpdateDropdownBoxesSubscription = null;
     
     /**
      * Creates new instance.
@@ -24,7 +59,6 @@ export class SortIdentifiersByAlphabet {
      * Behavior contract function. Behavior is told it can perform it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     activateBehavior() {
         if( this._disposed ) return;
         if( this._behaviorActive ) return;
@@ -38,7 +72,6 @@ export class SortIdentifiersByAlphabet {
      * Behavior contract function. Behavior is told it must stop performing it's behavior.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     deactivateBehavior() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -52,7 +85,6 @@ export class SortIdentifiersByAlphabet {
      * Releases resources held by this object.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     dispose() {
         // Run even if disposed, won't hurt...
         
@@ -66,8 +98,9 @@ export class SortIdentifiersByAlphabet {
      * Registers listener to {@link DisplayIdentifiersOnDropdownBoxes}'s `will-update-dropdown-boxes` event.
      * Unregisters any previous existing listener.
      * If object has been disposed of, this method has no effect.
+     *
+     * @private
      */
-    //@logged
     registerWillUpdateDropdownBoxesListener() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
@@ -75,7 +108,7 @@ export class SortIdentifiersByAlphabet {
         this.unregisterWillUpdateDropdownBoxesListener();
         this._listenToWillUpdateDropdownBoxesSubscription = this._displayIdentifiersOnDropdownBoxes.onWillUpdateDropdownBoxes(
             ( willUpdateDropdownBoxesEvent ) => {
-                this.sortIdentifiersByAlphabet( willUpdateDropdownBoxesEvent );
+                this.sortIdentifiers( willUpdateDropdownBoxesEvent );
             },
             this,
             null
@@ -84,8 +117,9 @@ export class SortIdentifiersByAlphabet {
     
     /**
      * Unregisters listener to {@link DisplayIdentifiersOnDropdownBoxes}'s `will-update-dropdown-boxes` event.
+     *
+     * @private
      */
-    //@logged
     unregisterWillUpdateDropdownBoxesListener() {
         // Run even if disposed, won't hurt...
         
@@ -98,12 +132,30 @@ export class SortIdentifiersByAlphabet {
     /**
      * Sorts {@link Identifier}s by alphabet. Supply {@link DisplayIdentifiersOnDropdownBoxes}'s
      * `will-update-dropdown-boxes` event to the function.
-     * @param {function(parentIdentifiers: Array, childrenIdentifiers: Array>)} willUpdateDropdownBoxesEvent
+     * 
+     * @param {function(parentIdentifiers: Array<Identifier>, childrenIdentifiers: Array<Identifier>, parentSelectedIndex: number, childrenSelectedIndex: number)} willUpdateDropdownBoxesEvent
+     *
+     * @private
      */
-    //@logged
-    sortIdentifiersByAlphabet( willUpdateDropdownBoxesEvent ) {
+    sortIdentifiers( willUpdateDropdownBoxesEvent ) {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
+        
+        const { parentIdentifiers, childrenIdentifiers, parentSelectedIndex, childrenSelectedIndex } = willUpdateDropdownBoxesEvent;
+        
+        // We use values provided by event, which might be changed, so we better do some checks...
+        if( typeof parentIdentifiers !== 'object' || !Array.isArray( parentIdentifiers ) ) return;
+        if( typeof childrenIdentifiers !== 'object' || !Array.isArray( childrenIdentifiers ) ) return;
+        if( typeof parentSelectedIndex !== 'number' ) return;
+        if( typeof childrenSelectedIndex !== 'number' ) return;
+        if( parentSelectedIndex >= parentIdentifiers.length || parentSelectedIndex < 0 ) return;
+        if( childrenSelectedIndex >= childrenIdentifiers.length || childrenSelectedIndex < 0 ) return;
+        
+        const selectedParentIdentifier = parentIdentifiers[parentSelectedIndex]; // Do not silence eslint
+        const selectedChildrenIdentifier = childrenIdentifiers[childrenSelectedIndex]; // Do not silence eslint
+        
+        if( !(selectedParentIdentifier instanceof Identifier) ) return;
+        if( !(selectedChildrenIdentifier instanceof Identifier) ) return;
         
         // Sort the identifiers by alphabet
         // What to skip: TopScopeIdentifier, EmptyIdentifier - those are always on top...
@@ -146,18 +198,22 @@ export class SortIdentifiersByAlphabet {
             return 0;
         };
         
-        console.debug( 'sortLeft', this.sortLeft, 'sortRight', this.sortRight );
-        
-        if( this.sortLeft ) {
+        if( this.sortingModeForLeftDropdown === 'Alphabet' ) {
             willUpdateDropdownBoxesEvent.parentIdentifiers.sort( sortingFunction );
+            
+            // If array order changes, we need to update selected index to show the correct identifier on DropdownBox header...
+            if( selectedParentIdentifier.getID() !== parentIdentifiers[parentSelectedIndex].getID() ) { // Do not silence eslint
+                willUpdateDropdownBoxesEvent.parentSelectedIndex = parentIdentifiers.findIndex( (item) => { return selectedParentIdentifier.getID() === item.getID(); } );
+            }
         }
         
-        if( this.sortRight ) {
+        if( this.sortingModeForRightDropdown === 'Alphabet' ) {
             willUpdateDropdownBoxesEvent.childrenIdentifiers.sort( sortingFunction );
-        }
-        
-        if( !this.sortLeft && !this.sortRight ) {
-            this.deactivateBehavior();
+            
+            // If array order changes, we need to update selected index to show the correct identifier on DropdownBox header...
+            if( selectedChildrenIdentifier.getID() !== childrenIdentifiers[childrenSelectedIndex].getID() ) { // Do not silence eslint
+                willUpdateDropdownBoxesEvent.childrenSelectedIndex = childrenIdentifiers.findIndex( (item) => { return selectedChildrenIdentifier.getID() === item.getID(); } );
+            }
         }
     }
     
@@ -165,7 +221,6 @@ export class SortIdentifiersByAlphabet {
      * Behavior contract function returning Behavior's settings schema.
      * @return {object} Schema of Behavior's settings.
      */
-    //@logged
     settings() {
         return {
             name: 'Sort identifiers by alphabet',
@@ -201,7 +256,6 @@ export class SortIdentifiersByAlphabet {
      * perform update right after settings are changed.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     settingsChanged() {
         if( this._disposed ) return;
         if( !this.activateBehavior ) return;

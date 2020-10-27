@@ -141,22 +141,18 @@ export class BehaviorManager {
         
         this._subscriptions.add(
             this._navigationBar.onDidActivate(( activateEvent ) => {
-                console.debug('BehaviorManager::onDidActivate');
                 this._emitter.emit( 'did-navigation-bar-activate', activateEvent );
             })
         );
         
         this._subscriptions.add(
             this._navigationBar.onDidDeactivate(( deactivateEvent ) => {
-                console.debug('BehaviorManager::onDidDeactivate');
                 this._emitter.emit( 'did-navigation-bar-deactivate', deactivateEvent );
             })
         );
         
         this._subscriptions.add(
             this._navigationBar.onDidChangeActiveTextEditor(( changeActiveTextEditorEvent ) => {
-                console.debug('BehaviorManager::<anon>onDidChangeActiveTextEditor');
-                
                 const textEditor = changeActiveTextEditorEvent.textEditor;
                 
                 if( this._subscriptionToOnDidChangeSelectedIdentifier ) {
@@ -179,16 +175,12 @@ export class BehaviorManager {
                     if( provider ) {
                         this._subscriptionToOnDidGenerateIdentifiers =
                             provider.onDidGenerateIdentifiers(( generateIdentifiersEvent ) => {
-                                console.debug('BehaviorManager::<anon>onDidGenerateIdentifiers');
-                                
                                 this._emitter.emit( 'did-generate-identifiers', generateIdentifiersEvent );
                             });
                     }
                                     
                     this._subscriptionToOnDidChangeSelectedIdentifier =
                         this._navigationBar.onDidChangeSelectedIdentifier(( changeSelectedIdentifierEvent ) => {
-                            console.debug('BehaviorManager::<anon>onDidChangeSelectedIdentifier');
-                            
                             this._emitter.emit( 'did-change-selected-identifier', changeSelectedIdentifierEvent );
                         });
                 }
@@ -237,7 +229,7 @@ export class BehaviorManager {
     
     /**
      * Returns {@link BehaviorSettingsManager} of this BehaviorManager.
-     * 
+     *
      * @return {BehaviorSettingsManager} BehaviorSettingsManager of this BehaviorManager.
      */
     getBehaviorSettingsManager() {

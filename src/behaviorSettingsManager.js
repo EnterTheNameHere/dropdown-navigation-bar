@@ -60,7 +60,7 @@ export class BehaviorSettingsManager {
         if( this._disposed ) return;
         
         if( Behavior.checkInstanceIsBehavior( behavior ) ) {
-            this.processBehaviorSettings( behavior );
+            this.processBehaviorSettingsConfig( behavior );
         }
     }
     
@@ -82,77 +82,128 @@ export class BehaviorSettingsManager {
     /**
      * Processes {@link BehaviorSettings}' config to internal representation.
      * Has no effect if Behavior is not a valid {@link Behavior}.
+     * Has no effect if config is not an object.
+     * Config item is not processed if it doesn't have a valid schema.
      * If object has been disposed of, this method has no effect.
      *
      * @param {Behavior} behavior
      *
      * @private
      */
-    processBehaviorSettings( behavior ) {
+    processBehaviorSettingsConfig( behavior ) {
         if( this._disposed ) return;
         if( !Behavior.checkInstanceIsBehavior( behavior ) ) return;
                 
         const settings = behavior.settings();
-        const behaviorKey = settings.name.toLowerCase().split(' ').join('_'); // replace space with underscore
         
+        if( typeof settings.config === 'undefined' ) {
+            // Behavior defines no config, so nothing to do...
+            return;
+        }
+        
+        if( typeof settings.config !== 'object' ) {
+            atom.notifications.addWarning(`Behavior ${settings.name} settings: config property is of type: '${typeof settings.config}'. Settings.config is expected to be an object defining config items as properties!`);
+            // We can't process config, so nothing to do...
+            return;
+        }
+        
+        // Use package name as beginning of config keyPath
         const packageKey = `${packageJSON.name}.behaviors`;
+        // Use name of behavior as middle for config keyPath
+        const behaviorKey = settings.name.toLowerCase().split(' ').join('_'); // replace space with underscore
         
         const behaviorSettingsDS = {};
         behaviorSettingsDS.behavior = behavior;
         behaviorSettingsDS.configItems = [];
         
-        if( typeof settings.config === 'object' ) {
-            for( const propertyName in settings.config ) {
-                if( !Object.prototype.hasOwnProperty.call( settings.config, propertyName ) ) continue;
+        for( const propertyName in settings.config ) {
+            if( !Object.prototype.hasOwnProperty.call( settings.config, propertyName ) ) continue;
+            
+            // We're accessing settings.config property, name of property is not known ahead of time...
+            // We are accessing known property names of this property.
+            // Checks are made as we go on.
+            const configItem = settings.config[propertyName]; // do not silence eslint
+            
+            if( typeof configItem !== 'object' ) {
+                atom.notifications.addWarning(`Behavior ${settings.name} settings: '${propertyName}' config item has unexpected type: '${typeof configItem}'. Config item should be an object defining a schema!`);
+                continue;
+            }
+            
+            const processedConfigItem = {};
+            processedConfigItem.propertyName = propertyName;
+            processedConfigItem.keyPath = `${packageKey}.${behaviorKey}.${propertyName}`;
+            
+            if( typeof configItem.title !== 'string' ) {
+                atom.notifications.addError(`Behavior ${settings.name} settings: ${propertyName} config item has no title set! Title is text to display on settings popup dialog so it must be set for all config items!`);
+                continue;
+            }
+            processedConfigItem.title = configItem.title;
+            
+            processedConfigItem.description = '';
+            if( typeof configItem.description === 'string' ) {
+                processedConfigItem.description = configItem.description;
+            }
+            
+            if( typeof configItem.type !== 'string' ) {
+                atom.notifications.addWarning(`Behavior ${settings.name} settings: config item '${propertyName}' must set 'type' property which must be a string. Currently it's '${typeof configItem.type}'. Please set 'type' property as a string like "boolean", "string" etc.`);
+                continue;
+            }
+            
+            if( configItem.type === 'boolean' ) {
+                processedConfigItem.type = 'boolean';
                 
-                // We're accessing settings.config property, name of property is not known ahead of time...
-                // We are accessing known property names of this property.
-                // Checks are made as we go on.
-                const configItem = settings.config[propertyName]; // do not silence eslint
-                const processedConfigItem = {};
-                processedConfigItem.propertyName = propertyName;
-                processedConfigItem.keyPath = `${packageKey}.${behaviorKey}.${propertyName}`;
-                if( typeof configItem.title !== 'string' ) {
-                    atom.notifications.addError(`Config item of '${settings.name}' behavior has no title set! Title is text to display on settings popup dialog so it must be set for all config items!`);
-                    continue;
+                // In case default is not present or not boolean, make it false by default
+                if( typeof configItem.default !== 'boolean' ) {
+                    processedConfigItem.default = false;
+                } else {
+                    processedConfigItem.default = configItem.default;
                 }
-                processedConfigItem.title = configItem.title;
+            } else if( configItem.type === 'string' ) {
+                processedConfigItem.type = 'string';
                 
-                if( typeof configItem === 'object' ) {
-                    if( typeof configItem.type === 'string' ) {
+                // Are values pre-set?
+                if( typeof configItem.enum === 'object' && Array.isArray( configItem.enum ) ) {
+                    const predefinedValues = [];
+                    for( const enumValue of configItem.enum ) {
+                        if( typeof enumValue.value !== 'string' ) {
+                            atom.notifications.addWarning(`Behavior ${settings.name} settings: Enumeration of values of '${propertyName}' config item contains value which is not string!`);
+                            continue;
+                        }
                         
-                        if( configItem.type === 'boolean' ) {
-                            processedConfigItem.type = 'boolean';
-                            
-                            // In case default is not present or not boolean, make it false by default
-                            if( typeof configItem.default !== 'boolean' ) {
-                                processedConfigItem.default = false;
-                            } else {
-                                processedConfigItem.default = configItem.default;
-                            }
-                            
-                            processedConfigItem.description = '';
-                            if( typeof configItem.description === 'string' ) {
-                                processedConfigItem.description = configItem.description;
-                            }
-                            
-                            behaviorSettingsDS.configItems.push( processedConfigItem );
-                        } else if( configItem.type === 'string' ) {
-                            processedConfigItem.type = 'string';
-                            
-                            // Do we have pre-set values?
-                            if( typeof processedConfigItem.enum === 'object' && Array.isArray( processedConfigItem.enum ) ) {
-                                
-                            }
-                        } else {
-                            atom.notifications.addWarning(`${settings.name} behavior has unexpected config item of ${configItem.type} type.`);
+                        const predefinedValue = {};
+                        predefinedValue.value = enumValue.value;
+                        
+                        predefinedValue.description = '';
+                        if( typeof enumValue.description === 'string' ) {
+                            predefinedValue.description = enumValue.description;
+                        }
+                        
+                        predefinedValues.push( predefinedValue );
+                    }
+                    processedConfigItem.predefinedValues = predefinedValues;
+                }
+                
+                processedConfigItem.default = '';
+                if( typeof configItem.default === 'string' ) {
+                    if( processedConfigItem.predefinedValues ) {
+                        if( !processedConfigItem.predefinedValues.find( (item) => { return item.value === configItem.default; } ) ) {
+                            atom.notifications.addWarning(`Behavior ${settings.name} settings: config item ${propertyName} has default value, which is not defined in values enumeration! Default value should be available in enumerated values!`);
                         }
                     }
+                    processedConfigItem.default = configItem.default;
                 }
+                
+                if( typeof configItem.radio === 'boolean' ) {
+                    if( configItem.radio ) {
+                        processedConfigItem.desiredRepresentation = 'radio';
+                    }
+                }
+            } else {
+                atom.notifications.addWarning(`Behavior ${settings.name} settings: config item '${propertyName}' has unexpected type: ${configItem.type}.`);
+                continue;
             }
-        } else if( typeof settings.config !== 'undefined' ) {
-            // No config for this behavior
-            atom.notifications.addWarning(`${settings.name} behavior has unexpected config type, object is expected!`);
+            
+            behaviorSettingsDS.configItems.push( processedConfigItem );
         }
         
         this._settings.set( behavior, behaviorSettingsDS );
