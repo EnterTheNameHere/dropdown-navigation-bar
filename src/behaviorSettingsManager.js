@@ -18,6 +18,12 @@ export class BehaviorSettingsManager {
     _disposed = false;
     
     /**
+     * Holds instance of BehaviorManager this object belongs to.
+     * @type {BehaviorManager}
+     */
+    _behaviorManager = null;
+    
+    /**
      * Holds processed {@link BehaviorSettingsDataStructure}s for Behaviors.
      * @type {Map<Behavior,BehaviorSettingsDataStructure>}
      */

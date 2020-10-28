@@ -47,7 +47,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
     _emitter = new BehaviorManagerEmitter();
     
     /**
-     * Boolean value representing whether this behavior is disposed of. It is not safe to change state of disposed object.
+     * Boolean value representing whether this object is disposed of. It is not safe to change state of disposed object.
      * @type {boolean}
      *
      * @private
@@ -164,7 +164,10 @@ export class DisplayIdentifiersOnDropdownBoxes {
      * @param  {function(parentIdentifiers: Array, childrenIdentifiers: Array)} callback Function to invoke when DropdownBoxes are about to be updated.
      * @param  {Behavior}                      behaviorInstance Instance of Behavior the callback belongs to. Required in case order of callbacks matter.
      * @param  {{before: Array, after: Array}} [orderRules]     Rules specifying order in which behaviorInstances should be called.
+     *
      * @return {Disposable}                                     Returns a Disposable on which .dispose() can be called to unsubscribe.
+     *
+     * @throws {Error} if object is already disposed of.
      */
     onWillUpdateDropdownBoxes( callback, behaviorInstance, orderRules ) {
         if( this._disposed ) throw new Error('Trying to call function of object that is already disposed of!');
@@ -181,7 +184,10 @@ export class DisplayIdentifiersOnDropdownBoxes {
      * @param  {function()}                    callback         Function to invoke when DropdownBoxes are about to be updated.
      * @param  {Behavior}                      behaviorInstance Instance of Behavior the callback belongs to. Required in case order of callbacks matter.
      * @param  {{before: Array, after: Array}} [orderRules]     Rules specifying order in which behaviorInstances should be called.
+     *
      * @return {Disposable}                                     Returns a Disposable on which .dispose() can be called to unsubscribe.
+     *
+     * @throws {Error} if object is already disposed of.
      */
     odDidUpdateDropdownBoxes( callback, behaviorInstance, orderRules ) {
         if( this._disposed ) throw new Error('Trying to call function of object that is already disposed of!');

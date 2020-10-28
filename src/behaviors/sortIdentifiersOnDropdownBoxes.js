@@ -36,12 +36,16 @@ export class SortIdentifiersOnDropdownBoxes {
     /**
      * Holds instance of {@link DisplayIdentifiersOnDropdownBoxes} this Behavior is connected to.
      * @type {DisplayIdentifiersOnDropdownBoxes}
+     *
+     * @private
      */
     _displayIdentifiersOnDropdownBoxes = null;
     
     /**
      * Subscription to listener to {@link DisplayIdentifiersOnDropdownBoxes}'s `will-update-dropdown-boxes` event.
      * @type {Disposable}
+     *
+     * @private
      */
     _listenToWillUpdateDropdownBoxesSubscription = null;
     
@@ -83,7 +87,6 @@ export class SortIdentifiersOnDropdownBoxes {
     
     /**
      * Releases resources held by this object.
-     * If object has been disposed of, this method has no effect.
      */
     dispose() {
         // Run even if disposed, won't hurt...
@@ -132,7 +135,8 @@ export class SortIdentifiersOnDropdownBoxes {
     /**
      * Sorts {@link Identifier}s by alphabet. Supply {@link DisplayIdentifiersOnDropdownBoxes}'s
      * `will-update-dropdown-boxes` event to the function.
-     * 
+     * If object has been disposed of, this method has no effect.
+     *
      * @param {function(parentIdentifiers: Array<Identifier>, childrenIdentifiers: Array<Identifier>, parentSelectedIndex: number, childrenSelectedIndex: number)} willUpdateDropdownBoxesEvent
      *
      * @private

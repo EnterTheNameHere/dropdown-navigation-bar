@@ -35,6 +35,8 @@ export class JumpToIdentifierWhenItIsSelectedOnDropdownBox {
     /**
      * Subscription to listener to {@link BehaviorManager}'s `did-change-selected-identifier` event.
      * @type {Disposable|null}
+     *
+     * @private
      */
     _subscriptionToOnDidChangeSelectedIdentifier = null;
     
@@ -83,6 +85,7 @@ export class JumpToIdentifierWhenItIsSelectedOnDropdownBox {
     /**
      * Registers to `did-change-selected-identifier` of {@link BehaviorManager} event.
      * If object has been disposed of, this method has no effect.
+     *
      * @throws {Error} if object is already disposed of.
      */
     registerOnDidChangeSelectedIdentifier() {

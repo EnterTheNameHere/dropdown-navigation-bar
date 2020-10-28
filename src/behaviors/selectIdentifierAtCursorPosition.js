@@ -36,30 +36,40 @@ export class SelectIdentifierAtCursorPosition {
     /**
      * Holds instance of {@link DisplayIdentifiersOnDropdownBoxes} this Behavior is connected to.
      * @type {DisplayIdentifiersOnDropdownBoxes}
+     *
+     * @private
      */
     _displayIdentifiersOnDropdownBoxes = null;
     
     /**
      * Subscription to {@link BehaviorManager}'s `did-change-active-text-editor` event.
      * @type {Disposable}
+     *
+     * @private
      */
     _observeActiveTextEditorSubscription = null;
     
     /**
      * Subscription to listener to active {@link TextEditor}'s `did-change-cursor-position` event.
      * @type {Disposable}
+     *
+     * @private
      */
     _didChangeCursorPositionListenerSubscription = null;
     
     /**
      * Subscription to listener to {@link DisplayIdentifiersOnDropdownBoxes}'s `will-update-dropdown-boxes` event.
      * @type {Disposable}
+     *
+     * @private
      */
     _didUpdateDropdownBoxesSubscription = null;
     
     /**
      * Holds instance to active {@link TextEditor}.
      * @type {TextEditor}
+     *
+     * @private
      */
     _currentActiveTextEditor = null;
     
@@ -108,7 +118,6 @@ export class SelectIdentifierAtCursorPosition {
     
     /**
      * Releases resources held by this object.
-     * If object has been disposed of, this method has no effect.
      */
     dispose() {
         // Run even if disposed, won't hurt...
