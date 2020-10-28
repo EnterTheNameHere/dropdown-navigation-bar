@@ -150,11 +150,11 @@ export class DropdownBoxItemWrapperView {
      * If you pass new event handlers, you must set `prop.registerHandlersAgain`
      * to true, otherwise new event handlers will be ignored.
      *
-     * @param {object}  props                Component (etch) props object. Set properties you want to change.
-     * @param {boolean} props.selected       True if item should be styles as selected.
-     * @param {boolean} props.active         True if item should be styled as highlighted.
-     * @param {boolean} props.registerHandlersAgain Must set to true if you want to re-register event listeners.
-     * @param {object}  props.eventHandlers  The props.registerHandlersAgain must be true or event handlers won't be updated.
+     * @param {object}  newProps                Component (etch) props object. Set properties you want to change.
+     * @param {boolean} newProps.selected       True if item should be styles as selected.
+     * @param {boolean} newProps.active         True if item should be styled as highlighted.
+     * @param {boolean} newProps.registerHandlersAgain Must set to true if you want to re-register event listeners.
+     * @param {object}  newProps.eventHandlers  The props.registerHandlersAgain must be true or event handlers won't be updated.
      * @param {object|Element} [newChildren] If set, it will replace the item's value with the newly provided value.
      * @return {Promise}
      */

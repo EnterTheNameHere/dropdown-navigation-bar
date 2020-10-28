@@ -4,8 +4,6 @@ import { Behavior } from './behaviors/behavior';
 import { BehaviorManagerEmitter } from './behaviorManagerEmitter';
 import { BehaviorSettingsManager } from './behaviorSettingsManager';
 
-//import { logged } from './debug';
-
 /**
  * BehaviorSettings contract
  * @interface
@@ -131,11 +129,8 @@ export class BehaviorManager {
      * Initializes BehaviorManager after {@link NavigationBar} finished initialization.
      * If object has been disposed of, this method has no effect.
      *
-     * @param {function(ev: {navigationBar: NavigationBar})} navigationBarInitializeEvent
-     *
      * @private
      */
-    //@logged
     initialize() {
         if( this._disposed ) return;
         
@@ -243,7 +238,6 @@ export class BehaviorManager {
      * @param {object} behavior Instance of object implementing a behavior.
      * @returns {BehaviorManager} Chainable.
      */
-    //@logged
     registerBehavior( behavior ) {
         if( this._disposed ) return this;
         
@@ -266,7 +260,6 @@ export class BehaviorManager {
      * @param  {object} behavior Previously registered behavior.
      * @return {BehaviorManager} Chainable.
      */
-    //@logged
     unregisterBehavior( behavior ) {
         if( this._disposed ) return this;
         
@@ -281,31 +274,11 @@ export class BehaviorManager {
     }
     
     /**
-     * Notifies subscriber that {@link NavigationBar} was activated.
-     *
-     * @param  {function(callback: function, behaviorInstance: Behavior)} callback Function to invoke when NavigationBar was activated.
-     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
-     * @throws {Error} If object is already disposed of.
-     */
-    onDidNavigationBarActivate() {
-        throw new Error('onDidNavigationBarActivate is obsolete');
-    }
-    
-    /**
-     * Notifies subscriber that {@link NavigationBar} was deactivated.
-     *
-     * @param  {function(callback: function, behaviorInstance: Behavior)} callback Function to invoke when NavigationBar was deactivated.
-     * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
-     * @throws {Error} If object is already disposed of.
-     */
-    onDidNavigationBarDeactivate() {
-        throw new Error('onDidNavigationBarDeactivate is obsolete');
-    }
-    
-    /**
      * Notifies subscriber that atom's active {@link TextEditor} has changed.
      *
-     * @param  {function(callback: function, behaviorInstance: Behavior)} callback Function to invoke when atom's active {@link TextEditor} has changed.
+     * @param  {function(callback: function, behaviorInstance: Behavior)} callback          Function to invoke when atom's active {@link TextEditor} has changed.
+     * @param  {Behavior}                                                 behaviorInstance  Instance of Behavior registering for this event.
+     * @param  {{before: array, after: array}}                            [orderRules]      Rules for order of execution. Define which Behaviors' callback functions should be run before and after this `callback`.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      * @throws {Error} If object is already disposed of.
      */
@@ -323,7 +296,9 @@ export class BehaviorManager {
      * Notifies subscriber when {@link IdentifiersProvider} of atom's active {@link TextEditor} has
      * generated {@Identifier}s.
      *
-     * @param  {function(callback: function, behaviorInstance: Behavior)} callback Function to invoke when {@link IdentifiersProvider} of atom's active {@link TextEditor} has generated {@Identifier}s.
+     * @param  {function(callback: function, behaviorInstance: Behavior)} callback          Function to invoke when {@link IdentifiersProvider} of atom's active {@link TextEditor} has generated {@Identifier}s.
+     * @param  {Behavior}                                                 behaviorInstance  Instance of Behavior registering for this event.
+     * @param  {{before: array, after: array}}                            [orderRules]      Rules for order of execution. Define which Behaviors' callback functions should be run before and after this `callback`.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      * @throws {Error} If object is already disposed of.
      */
@@ -340,7 +315,9 @@ export class BehaviorManager {
     /**
      * Notifies subscriber when {@link NavigationBar}'s selected {@link Identifier} has changed.
      *
-     * @param  {function(callback: function, behaviorInstance: Behavior)} callback Function to invoke when {@link NavigationBar}'s selected {@link Identifier} has changed.
+     * @param  {function(callback: function, behaviorInstance: Behavior)} callback          Function to invoke when {@link NavigationBar}'s selected {@link Identifier} has changed.
+     * @param  {Behavior}                                                 behaviorInstance  Instance of Behavior registering for this event.
+     * @param  {{before: array, after: array}}                            [orderRules]      Rules for order of execution. Define which Behaviors' callback functions should be run before and after this `callback`.
      * @return {Disposable} Returns a Disposable on which .dispose() can be called to unsubscribe.
      * @throws {Error} If object is already disposed of.
      */
