@@ -21,7 +21,7 @@ export class BehaviorSettingsManager {
      * Holds processed {@link BehaviorSettingsDataStructure}s for Behaviors.
      * @type {Map<Behavior,BehaviorSettingsDataStructure>}
      */
-    _settings = new Map();
+    _behaviorSettings = new Map();
     
     /**
      * Holds subscription to atom.config.onDidChange for Behavior.
@@ -42,7 +42,7 @@ export class BehaviorSettingsManager {
      * If object has been disposed of, this method has no effect.
      */
     dispose() {
-        this._settings.clear();
+        this._behaviorSettings.clear();
         
         for( const [,value] of this._watchBehaviorSettingsSubscriptions ) {
             value.dispose();
@@ -76,7 +76,7 @@ export class BehaviorSettingsManager {
             disposeHandler.dispose();
             this._watchBehaviorSettingsSubscriptions.delete( behavior );
         }
-        this._settings.delete( behavior );
+        this._behaviorSettings.delete( behavior );
     }
     
     /**
@@ -206,7 +206,7 @@ export class BehaviorSettingsManager {
             behaviorSettingsDS.configItems.push( processedConfigItem );
         }
         
-        this._settings.set( behavior, behaviorSettingsDS );
+        this._behaviorSettings.set( behavior, behaviorSettingsDS );
         this.mapSettingsToAtomConfig( behaviorSettingsDS );
     }
     
@@ -240,7 +240,7 @@ export class BehaviorSettingsManager {
      * @return {Map<Behavior,BehaviorSettingsDataStructure>} contains processed settings.
      */
     getSettings() {
-        return this._settings;
+        return this._behaviorSettings;
     }
 }
 

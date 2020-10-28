@@ -59,7 +59,7 @@ export class BehaviorManager {
      * Holds {@link BehaviorSettingsManager} assigned to this BehaviorManager.
      * @type {BehaviorSettingsManager}
      */
-    _settings = new BehaviorSettingsManager(this);
+    _behaviorSettings = new BehaviorSettingsManager(this);
     
     /**
      * Holds subscriptions of BehaviorManager which are alive through this BehaviorManager's life.
@@ -94,7 +94,6 @@ export class BehaviorManager {
      * Disposes of all resources owned by the instance of this class.
      * If object has been disposed of, this method has no effect.
      */
-    //@logged
     dispose() {
         if( this._disposed ) return;
         
@@ -160,11 +159,7 @@ export class BehaviorManager {
                     this._subscriptionToOnDidGenerateIdentifiers = null;
                 }
                 
-                this._activeTextEditor = null;
-                this._activeTextEditorIdentifiersProvider = null;
-                
                 if( textEditor ) {
-                    this._activeTextEditor = textEditor;
                     const provider = this.getProviderForActiveTextEditor();
                     
                     if( provider ) {
@@ -228,7 +223,7 @@ export class BehaviorManager {
      * @return {BehaviorSettingsManager} BehaviorSettingsManager of this BehaviorManager.
      */
     getBehaviorSettingsManager() {
-        return this._settings;
+        return this._behaviorSettings;
     }
     
     /**
@@ -244,7 +239,7 @@ export class BehaviorManager {
         if( !Behavior.checkInstanceIsBehavior( behavior ) ) return this;
         
         this._behaviors.add( behavior );
-        this._settings.registerBehavior( behavior );
+        this._behaviorSettings.registerBehavior( behavior );
         
         if( typeof behavior.activateBehavior === 'function' ) {
             behavior.activateBehavior();
@@ -267,7 +262,7 @@ export class BehaviorManager {
             behavior.deactivateBehavior();
         }
         
-        this._settings.unregisterBehavior( behavior );
+        this._behaviorSettings.unregisterBehavior( behavior );
         this._behaviors.remove( behavior );
         
         return this;
