@@ -65,7 +65,7 @@ export class BehaviorSettingsManager {
     registerBehavior( behavior ) {
         if( this._disposed ) return;
         
-        if( Behavior.checkInstanceIsBehavior( behavior ) ) {
+        if( Behavior.isBehavior( behavior ) ) {
             this.processBehaviorSettingsConfig( behavior );
         }
     }
@@ -98,7 +98,7 @@ export class BehaviorSettingsManager {
      */
     processBehaviorSettingsConfig( behavior ) {
         if( this._disposed ) return;
-        if( !Behavior.checkInstanceIsBehavior( behavior ) ) return;
+        if( !Behavior.isBehavior( behavior ) ) return;
                 
         const settings = behavior.settings();
         

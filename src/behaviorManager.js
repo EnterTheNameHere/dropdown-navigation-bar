@@ -236,7 +236,7 @@ export class BehaviorManager {
     registerBehavior( behavior ) {
         if( this._disposed ) return this;
         
-        if( !Behavior.checkInstanceIsBehavior( behavior ) ) return this;
+        if( !Behavior.isBehavior( behavior ) ) return this;
         
         this._behaviors.add( behavior );
         this._behaviorSettings.registerBehavior( behavior );

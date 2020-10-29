@@ -48,7 +48,7 @@ export class Behavior {
      * @param  {Behavior} behavior object instance to check
      * @return {boolean} true or false
      */
-    static checkInstanceIsBehavior( behavior ) {
+    static isBehavior( behavior ) {
         if( typeof behavior.settings !== 'function' ) {
             atom.notifications.addError( 'behavior must implement settings function!' );
             //throw new Error('behavior must implement settings function!');
