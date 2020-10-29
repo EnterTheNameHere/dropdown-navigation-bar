@@ -1,5 +1,10 @@
 /* global atom */
 
+/** FIX: when you write code and add new lines, then when selecting EmptyIdentifier on right side DropdownBox will not
+move to correct line where end of parent (left side identifier) is. Need to refresh IdentifierProvider when user
+wants to display DropdownBox popup list, or before user clicks on DropdownBox item, to update the positions of
+identifiers in that editor, so cursor is moved to correct line/position **/
+
 import { CompositeDisposable } from 'atom';
 import { dom as $, default as etch } from 'etch';
 import { BehaviorManagerEmitter } from './../behaviorManagerEmitter';

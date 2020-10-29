@@ -2,6 +2,39 @@
 import { Emitter } from 'atom';
 import { EmptyIdentifier, TopScopeIdentifier } from './identifiers';
 
+/**
+ * IdentifiersProvider is used to parse Atom's {@link TextEditor} to create a list of {@link Identifier}s found in the
+ * code.
+ *
+ * This class is intended to be extended, it provides only minimal functionality. The main function doing the
+ * work is {@link this#generateIdentifiers}. Implement generation of {@link Identifier}s in there, and fire
+ * 'did-generate-identifiers' event when you are ready to provide {@link Identifier}s to users.
+ *
+ * Implementation notes: {@link TopScopeIdentifier} is specialized {@link Identifier} representing the top
+ * most scope of code in editor - it has no name and all {@link Identifier}s are children of it. When
+ * user want to display/process all {@link Identifier}s found in editor, this one is the top node in tree.
+ * {@link this#getTopScopeIdentifier} can be used to get {@link TopScopeIdentifier}.
+ *
+ * {@link this#getIdentifiersForParentsDropbox} should return all high/class/has-other-children {@link Identifier}s.
+ * What should be on the left side <- DropdownBox of {@link NavigationBarView}, this is where to put them... Takes
+ * an argument of {@link Identifier} from which to extract parent identifiers. Defaults to {@link TopScopeIdentifier}.
+ *
+ * {@link this#getIdentifiersForChildrenDropbox} should return all low/properties/methods/children of the
+ * {@link Identifier} provided as an argument. It's basically the right side -> DropdownBox of
+ * {@link NavigationBarView}. Should not return {@link Identifier} which has children, but it should return
+ * {@link Identifier} which is method and have zero to multiple {@link Identifier}s as arguments. It is the
+ * method {@link Identifier} which is the subject to return, and renderer/user should take care of displaying
+ * the arguments itself. {@link TopScopeIdentifier} is the default argument.
+ *
+ * {@link this#getIdentifierForPosition} should return {@link Identifier} on atom's {@link Point} - buffer position
+ * of cursor is used. Return {@link Identifier} found on that Point, be it body of class => class identifier,
+ * body of method => method identifier, property name outside of method => property Identifier, property name inside
+ * a method => method identifier. Use common logic. Defaults to {@link TopScopeIdentifier}.
+ *
+ * {@link EmptyIdentifier} is special identifier representing the empty or first child of class (or other appropriate
+ * object). Should be returned for right side -> DropdownBox of {@link NavigationBar} as the first child so user can
+ * choose it to move cursor to the end of that parent.
+ */
 export class IdentifiersProvider {
     /**
      * Holds TextEditor instance this provider provides Identifiers for.
