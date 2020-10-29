@@ -7,16 +7,28 @@ etch.setScheduler(atom.views);
 
 export class NavigationBarSettingsView {
     /**
-     * Holds instance of {@link BehaviorSettingsManager} {@link this} belongs to.
+     * Holds instance of {@link BehaviorSettingsManager} this object belongs to.
      * @type {BehaviorSettingsManager}
+     *
+     * @private
      */
     _behaviorSettingsManager = null;
     
     /**
      * Holds subscriptions of listeners to events while config popup dialog is opened.
      * @type {CompositeDisposable}
+     *
+     * @private
      */
     _whileShownSubscriptions = null;
+    
+    /**
+     * Holds etch props object.
+     * @type {object}
+     *
+     * @private
+     */
+    _props = null;
     
     constructor( props = {}/*, children = {}*/ ) {
         this._props = { ...{ hidden: true }, ...props };

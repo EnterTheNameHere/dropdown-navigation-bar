@@ -3,6 +3,14 @@ const etch = require('etch');
 const $ = etch.dom;
 
 export class NavigationBarSettingsButtonView {
+    /**
+     * Holds etch props object.
+     * @type {object}
+     * 
+     * @private
+     */
+    _props = null;
+    
     constructor( props = {}/*, children = {}*/ ) {
         this._props = props;
 
