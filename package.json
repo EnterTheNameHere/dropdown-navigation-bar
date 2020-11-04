@@ -1,6 +1,6 @@
 {
     "name": "dropdown-navigation-bar",
-    "main": "./lib/main",
+    "main": "./src/main",
     "version": "0.1.0",
     "description": "Adds navigation bar empowered with two brand new dropdown boxes capable of displaying class names, property names or really any name you have! Well, if someone have done the work to give the names to the navigation bar... Javascript included!",
     "keywords": [
@@ -10,6 +10,20 @@
         "class name",
         "hint",
         "help"
+    ],
+    "atomTestRunner": "./test/runner",
+    "atomTranspilers": [
+        {
+            "glob": "{src,test}/**/*.js",
+            "transpiler": "@atom/babel7-transpiler",
+            "options": {
+                "cacheKeyFiles": [
+                    "package.json",
+                    ".babelrc.js",
+                    "assert-messages-plugin.js"
+                ]
+            }
+        }
     ],
     "viewProviders": [
         "navigationBarViewProvider"
@@ -34,22 +48,27 @@
         "version": "conventional-changelog -o CHANGELOG.md -p eslint && git add CHANGELOG.md"
     },
     "dependencies": {
-        "@babel/parser": "^7.12.3",
         "etch": "^0.14.1",
         "log4js": "^6.3.0"
     },
     "devDependencies": {
+        "@atom/babel-plugin-chai-assert-async": "^1.0.0",
+        "@atom/babel7-transpiler": "^1.0.0-1",
+        "@atom/mocha-test-runner": "^1.6.0",
         "@babel/cli": "^7.12.1",
         "@babel/core": "^7.12.3",
         "@babel/eslint-parser": "^7.12.1",
         "@babel/eslint-plugin": "^7.12.1",
         "@babel/plugin-proposal-decorators": "^7.12.1",
+        "@babel/parser": "^7.12.3",
         "@babel/preset-env": "^7.12.1",
         "@babel/register": "^7.12.1",
         "babel-eslint": "^10.1.0",
         "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+        "chai": "^4.2.0",
+        "chai-as-promised": "^7.1.1",
         "cheerio": "^1.0.0-rc.3",
-        "esdoc": "^1.1.0",
+        "esdoc": "git+https://github.com/EnterTheNameHere/esdoc.git",
         "esdoc-ecmascript-proposal-plugin": "^1.0.0",
         "esdoc-standard-plugin": "^1.0.0",
         "eslint": "^7.12.1",
@@ -57,6 +76,12 @@
         "eslint-plugin-compat": "^3.8.0",
         "eslint-plugin-import": "^2.22.1",
         "eslint-plugin-promise": "^4.2.1",
-        "eslint-plugin-security": "^1.4.0"
+        "eslint-plugin-security": "^1.4.0",
+        "mocha": "^8.2.1",
+        "mocha-multi-reporters": "^1.1.7",
+        "mochawesome": "^6.2.1",
+        "react": "^17.0.1",
+        "react-dom": "^17.0.1",
+        "test-until": "^1.1.1"
     }
 }

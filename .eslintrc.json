@@ -1,4 +1,5 @@
 {
+    "root": true,
     "extends": [
         "eslint:recommended",
         "plugin:security/recommended",
@@ -6,14 +7,19 @@
         "plugin:import/errors",
         "plugin:import/warnings"
     ],
-    "parser": "@babel/eslint-parser",
+    "parser": "babel-eslint",
     "parserOptions": {
-        "ecmaVersion": 8,
+        "ecmaVersion": 2018,
+        "sourceType": "module",
         "ecmaFeatures": {
             "jsx": true,
-            "experimentalObjectRestSpread": false
-        },
-        "sourceType": "module"
+            "experimentalObjectRestSpread": true
+        }
+    },
+    "settings": {
+        "import/core-modules": [
+            "atom"
+        ]
     },
     "env": {
         "browser": true,
@@ -98,6 +104,21 @@
         "require-unicode-regexp": "error",
         "rest-spread-spacing": [ "error", "never" ],
         "symbol-description": "error",
+        "strict": 1,
         "template-curly-spacing": "error"
-    }
+    },
+    "overrides": [
+        {
+            "files": ["test/**"],
+            "rules": {
+                "prefer-arrow-callback": "off"
+            },
+            "env": {
+                "mocha": true
+            },
+            "globals": {
+                "assert": false
+            }
+        }
+    ]
 }
