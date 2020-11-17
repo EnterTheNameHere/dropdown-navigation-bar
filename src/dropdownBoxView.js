@@ -88,10 +88,10 @@ export class DropdownBoxView {
      * Updates the state of DropdownBox. Does not fire any event.
      * Etch framework function implementation.
      *
-     * @param {Object}                                 [props]               - Component (etch) props object. Set properties you want to change.
-     * @param {Array<Object>}                          [props.items]         - An array of items to populate DropdownBox.
-     * @param {number}                                 [props.selectedIndex] - Which item to display in header.
-     * @param {function(item: Object): string|Element} [props.itemRenderer]  - Function taking item and returning Element or text to display in DropdownBox.
+     * @param {Object}                                 [newProps]               - Component (etch) props object. Set properties you want to change.
+     * @param {Array<Object>}                          [newProps.items]         - An array of items to populate DropdownBox.
+     * @param {number}                                 [newProps.selectedIndex] - Which item to display in header.
+     * @param {function(item: Object): string|Element} [newProps.itemRenderer]  - Function taking item and returning Element or text to display in DropdownBox.
      *
      * @return {Promise}
      */
