@@ -48,12 +48,12 @@
         "version": "conventional-changelog -o CHANGELOG.md -p eslint && git add CHANGELOG.md"
     },
     "dependencies": {
+        "@atom/babel7-transpiler": "^1.0.0-1",
         "etch": "^0.14.1",
         "log4js": "^6.3.0"
     },
     "devDependencies": {
         "@atom/babel-plugin-chai-assert-async": "^1.0.0",
-        "@atom/babel7-transpiler": "^1.0.0-1",
         "@atom/mocha-test-runner": "^1.6.0",
         "@babel/cli": "^7.12.1",
         "@babel/core": "^7.12.3",
