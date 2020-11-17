@@ -83,5 +83,8 @@
         "react": "^17.0.1",
         "react-dom": "^17.0.1",
         "test-until": "^1.1.1"
+    },
+    "optionalDependencies": {
+        "conventional-changelog": "^3.1.24"
     }
 }
