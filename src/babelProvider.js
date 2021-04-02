@@ -404,7 +404,18 @@ export class BabelProvider extends IdentifiersProvider {
 
         const identifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
         this.setPositionsFromNode( node, identifier );
-        identifier.setName('ExportDefaultDeclaration').addKind('unimplemented');
+        if( node.declaration ) {
+            switch( node.declaration.type ) {
+            case 'ClassDeclaration':
+                this.processClassDeclaration( node.declaration, parentIdentifier, identifier );
+                break;
+            default:
+                console.warn( 'BabelProvider::processExportDefaultDeclaration: Unknown declaration type!', node.declaration.type );
+                console.info( 'declaration', node.declaration );
+            }
+        }
+        identifier.addKind('export');
+        identifier.addKind('default');
     }
 
     /*
