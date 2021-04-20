@@ -193,6 +193,7 @@ export class BabelProvider extends IdentifiersProvider {
 
         try {
             this._esTree = babelParser.parse( this._textEditor.getBuffer().getText(), parserOptions );
+            console.info('BabelProvider::parse esTree:', this._esTree);
         } catch( error ) {
             console.error( 'BabelProvider::parse caught exception:', error );
             this._esTree = null;
@@ -313,6 +314,7 @@ export class BabelProvider extends IdentifiersProvider {
             | WithStatement;
      */
     processStatement( node, currentIdentifier ) {
+        //console.info(`BabelProvider::processStatement: ${node.type}:`, node);
         if( this.processDeclaration( node, currentIdentifier ) ) {
             return true;
         }
@@ -320,12 +322,14 @@ export class BabelProvider extends IdentifiersProvider {
         switch( node.type ) {
         case 'FunctionBody':
             break;
+        case 'ExpressionStatement':
+            this.tryProcessModuleExports( node, currentIdentifier );
+            break;
         case 'BreakStatement':
         case 'ContinueStatement':
         case 'DebuggerStatement':
         case 'DoWhileStatement':
         case 'EmptyStatement':
-        case 'ExpressionStatement':
         case 'ForInStatement':
         case 'ForOfStatement':
         case 'ForStatement':
@@ -344,7 +348,67 @@ export class BabelProvider extends IdentifiersProvider {
         }
         return true;
     }
-
+    
+    tryProcessModuleExports( node, parentIdentifier ) {
+        // module.exports.two.three.four.last variable names are stored
+        // as last -> four -> three -> two -> exports -> module
+        // so we need to call recurrently until we get to module and exports part
+        const checkIsModuleExports = ( inNode ) => {
+            if( inNode
+                && inNode.type
+                && inNode.type === 'MemberExpression' ) {
+                if( inNode.object
+                    && inNode.object.type
+                    && inNode.object.type === 'Identifier'
+                    && inNode.object.name
+                    && inNode.object.name === 'module'
+                    && inNode.property
+                    && inNode.property.type
+                    && inNode.property.type === 'Identifier'
+                    && inNode.property.name
+                    && inNode.property.name === 'exports' ) {
+                    return inNode;
+                } else if( inNode.object
+                            && inNode.object.type
+                            && inNode.object.type === 'MemberExpression' ) {
+                    return checkIsModuleExports( inNode.object );
+                }
+                return null;
+            }
+            return null;
+        };
+        
+        if( node && node.expression && node.expression.left
+            && checkIsModuleExports( node.expression.left ) ) {
+            // empty
+        } else {
+            return false;
+        }
+       
+        const moduleExportsIdentifier = this.addNewIdentifier( parentIdentifier );
+        moduleExportsIdentifier.setName('module.exports');
+        moduleExportsIdentifier.addKind('export').addKind('variable');
+        
+        if( node.expression.right ) {
+            switch( node.expression.right.type ) {
+            case 'ClassExpression':
+                this.processClassExpression( node.expression.right, parentIdentifier, moduleExportsIdentifier );
+                break;
+            case 'FunctionExpression':
+                this.processFunctionExpression( node.expression.right, parentIdentifier, moduleExportsIdentifier );
+                break;
+            default:
+                //console.log('tryProcessModuleExports node.expression.right.type:', node.expression.right.type, node );
+                // nothing
+            }
+        }
+        
+        this.setPositionsFromNode( node, moduleExportsIdentifier );
+        
+        //console.log(moduleExportsIdentifier);
+        return true;
+    }
+    
     /*
         Declaration: ClassDeclaration
             | FunctionDeclaration
@@ -532,6 +596,24 @@ export class BabelProvider extends IdentifiersProvider {
         const classIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
         classIdentifier.addKind('class');
         this.setPositionsFromNode( node, classIdentifier );
+        this.processIdentifier( node.id, parentIdentifier, classIdentifier );
+        this.processClassBody( node.body, parentIdentifier, classIdentifier );
+    }
+    
+    /*
+        ClassExpression <: Class, Expression {
+            type: "ClassExpression";
+            loc: SourceLocation | null;
+            id: Identifier | null;
+            superClass: Expression | null;
+            body: ClassBody;
+        }
+     */
+    processClassExpression( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'ClassExpression', 'Wrong node type!' );
+        
+        const classIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        classIdentifier.addKind('class');
         this.processIdentifier( node.id, parentIdentifier, classIdentifier );
         this.processClassBody( node.body, parentIdentifier, classIdentifier );
     }
@@ -728,21 +810,57 @@ export class BabelProvider extends IdentifiersProvider {
             params: [ Pattern ];
             body: FunctionBody;
         }
-
-        FunctionBody <: BlockStatement {
-            body: [ Directive | Statement ];
-        }
      */
     processFunctionDeclaration( node, parentIdentifier ) {
         console.assert( node.type === 'FunctionDeclaration', 'Wrong node type!' );
 
-        const functionIdentifier = this.addNewIdentifier( parentIdentifier );
+        this.processFunction( node, parentIdentifier );
+    }
+    
+    /*
+        FunctionExpression <: Function, Expression {
+            type: "FunctionExpression";
+            loc: SourceLocation | null;
+            async: boolean;
+            generator: boolean;
+            id: Identifier | null;
+            params: [ Pattern ];
+            body: FunctionBody;
+        }
+     */
+    processFunctionExpression( node, parentIdentifier, currentIdentifier ) {
+        console.assert( node.type === 'FunctionExpression', 'Wrong node type!' );
+
+        this.processFunction( node, parentIdentifier, currentIdentifier );
+    }
+    
+    /*
+        Function <: Node {
+            async: boolean;
+            generator: boolean;
+            id: Identifier | null;
+            params: [ Pattern ];
+            body: FunctionBody;
+            loc: SourceLocation | null;
+        }
+     */
+    processFunction( node, parentIdentifier, currentIdentifier ) {
+        const functionIdentifier = currentIdentifier || this.addNewIdentifier( parentIdentifier );
+        
         functionIdentifier.addKind('function');
+        
+        if( node.id ) {
+            this.processIdentifier( node.id, parentIdentifier, functionIdentifier );
+        } else {
+            functionIdentifier.setName('(anonymous)');
+            functionIdentifier.addKind('anonymous');
+        }
+        
         this.setPositionsFromNode( node, functionIdentifier );
-        this.processIdentifier( node.id, parentIdentifier, functionIdentifier );
+        
         if( node.async ) functionIdentifier.addKind('async');
         if( node.generator ) functionIdentifier.addKind('generator');
-
+        
         for( const paramNode of node.params ) {
             const paramIdentifier = this.addNewIdentifier( functionIdentifier );
             paramIdentifier.addKind('param');
