@@ -77,7 +77,7 @@ class DropdownNavigationBarPackage {
     }
     
     consumeOutlineProvider( provider ) {
-        console.log( 'consumeOutlineProvider()', provider )
+        console.log( 'consumeOutlineProvider()', provider );
         outlineProviderRegistry.addProvider(provider);
     }
     
