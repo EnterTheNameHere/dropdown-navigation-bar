@@ -39,6 +39,11 @@
             "versions": {
                 "1.0.0": "consumeSignal"
             }
+        },
+        "outline-view": {
+            "versions": {
+                "0.1.0": "consumeOutlineProvider"
+            }
         }
     },
     "scripts": {
@@ -49,6 +54,7 @@
     },
     "dependencies": {
         "@atom/babel7-transpiler": "^1.0.0-1",
+        "atom-ide-base": "^2.6.0",
         "etch": "^0.14.1",
         "log4js": "^6.3.0"
     },

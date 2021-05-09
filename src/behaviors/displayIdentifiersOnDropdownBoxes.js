@@ -312,7 +312,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
                     name = item.getName();
                 }
                 
-                if( item.isKind('function') || item.isKind('method') ) {
+                if( item.isKind('function') || item.isKind('method') || item.isKind('constructor') ) {
                     name += '(';
                     const paramsPart = item.getChildren().map( (param) => { return param.getName(); } ).join(', ');
                     name += paramsPart ? ` ${paramsPart} ` : '';
@@ -330,7 +330,7 @@ export class DisplayIdentifiersOnDropdownBoxes {
                 const positions = ` <${start?`${start.row}:${start.column}`:'x:x'}-${end?`${end.row}:${end.column}`:'x:x'}>`;
                 
                 const getIconSpan = () => {
-                    if( item.isKind('const') ) return $.span( {class: 'icon variable'}, 'const' );
+                    if( item.isKind('const') || item.isKind('constructor') ) return $.span( {class: 'icon variable'}, 'const' );
                     if( item.isKind('let') ) return $.span( {class: 'icon variable'}, 'let' );
                     if( item.isKind('var') ) return $.span( {class: 'icon variable'}, 'var' );
                     if( item.isKind('class') ) return $.span( {class: 'icon class'}, 'class' );
