@@ -1,6 +1,7 @@
 
 import { CompositeDisposable } from 'atom';
 import { BabelProvider } from './babelProvider';
+import { OutlineProvider } from './outlineProvider';
 
 export class ProviderRegistry {
     _existingProviderInstances = new Map();
@@ -19,6 +20,7 @@ export class ProviderRegistry {
         switch( textEditor.getRootScopeDescriptor().scopes[0] ) {
         case 'source.js':
             provider = new BabelProvider( textEditor );
+            provider = new OutlineProvider( textEditor ); // TODO: decide on providers
             this._subscriptions.add( textEditor.onDidDestroy( () => {
                 this._existingProviderInstances.delete( textEditor );
             }));

@@ -5,6 +5,8 @@ import { CompositeDisposable } from 'atom'; // eslint-disable-line import/no-unr
 import { NavigationBar } from './navigationBar';
 import { NavigationBarView } from './navigationBarView';
 
+import { outlineProviderRegistry } from './outlineProvider';
+
 //import { logged } from './debug';
 
 class DropdownNavigationBarPackage {
@@ -69,6 +71,11 @@ class DropdownNavigationBarPackage {
 
         const view = new NavigationBarView( { navigationBar: navigationBar } );
         return view;
+    }
+    
+    consumeOutlineProvider( provider ) {
+        console.log( 'consumeOutlineProvider()', provider )
+        outlineProviderRegistry.addProvider(provider);
     }
 }
 
