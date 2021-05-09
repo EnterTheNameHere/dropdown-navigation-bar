@@ -9,6 +9,8 @@ import { outlineProviderRegistry } from './outlineProvider';
 
 //import { logged } from './debug';
 
+const identifiersProviders = new Set();
+
 class DropdownNavigationBarPackage {
     _active = false;
     toggled = false;
@@ -25,6 +27,7 @@ class DropdownNavigationBarPackage {
 
         this.subscriptions = new CompositeDisposable();
         this.navigationBar = new NavigationBar();
+        this.navigationBar.setProviders( identifiersProviders );
 
         this.panel = atom.workspace.addTopPanel({
             item: this.navigationBar.getView().element,
@@ -76,6 +79,11 @@ class DropdownNavigationBarPackage {
     consumeOutlineProvider( provider ) {
         console.log( 'consumeOutlineProvider()', provider )
         outlineProviderRegistry.addProvider(provider);
+    }
+    
+    consumeIdentifiersProvider( provider ) {
+        console.log( 'consumeIdentifiersProvider', provider );
+        identifiersProviders.add( provider );
     }
 }
 

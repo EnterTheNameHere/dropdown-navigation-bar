@@ -530,4 +530,8 @@ export class NavigationBar {
         
         return this._behaviorManager;
     }
+    
+    setProviders( providers ) {
+        this._providers.setRegistry( providers );
+    }
 }

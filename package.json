@@ -44,6 +44,11 @@
             "versions": {
                 "0.1.0": "consumeOutlineProvider"
             }
+        },
+        "dropdownbox-navigation-bar-identifiers-provider": {
+            "versions": {
+                "1.0.0": "consumeIdentifiersProvider"
+            }
         }
     },
     "scripts": {
