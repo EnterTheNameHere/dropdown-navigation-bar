@@ -1,7 +1,7 @@
 /* global atom */
 
 import { CompositeDisposable, Emitter } from 'atom'; // eslint-disable-line import/no-unresolved
-import { ProviderRegistry } from './providerRegistry';
+import { identifiersProviderRegistry } from './identifiersProviderRegistry';
 import { BehaviorManager } from './behaviorManager';
 import { DisplayIdentifiersOnDropdownBoxes } from './behaviors/displayIdentifiersOnDropdownBoxes';
 import { SortIdentifiersOnDropdownBoxes } from './behaviors/sortIdentifiersOnDropdownBoxes';
@@ -89,7 +89,7 @@ export class NavigationBar {
      *
      * @private
      */
-    _providers = new ProviderRegistry();
+    _providers = identifiersProviderRegistry;
 
     /**
      * Holds instance of {@link BehaviorManager} providing access for Behaviors.
@@ -529,9 +529,5 @@ export class NavigationBar {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
         
         return this._behaviorManager;
-    }
-    
-    setProviders( providers ) {
-        this._providers.setRegistry( providers );
     }
 }

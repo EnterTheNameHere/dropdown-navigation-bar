@@ -45,7 +45,7 @@
                 "0.1.0": "consumeOutlineProvider"
             }
         },
-        "dropdownbox-navigation-bar-identifiers-provider": {
+        "dropdown-navigation-bar-identifiers-provider": {
             "versions": {
                 "1.0.0": "consumeIdentifiersProvider"
             }
@@ -70,7 +70,6 @@
         "@babel/core": "^7.12.3",
         "@babel/eslint-parser": "^7.12.1",
         "@babel/eslint-plugin": "^7.12.1",
-        "@babel/parser": "^7.12.3",
         "@babel/plugin-proposal-decorators": "^7.12.1",
         "@babel/preset-env": "^7.12.1",
         "@babel/register": "^7.12.1",

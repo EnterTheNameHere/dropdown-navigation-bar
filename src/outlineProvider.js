@@ -1,10 +1,7 @@
 
-import { TextEditor, Point, CompositeDisposable } from 'atom'; // eslint-disable-line import/no-unresolved, no-unused-vars
-
 import { Identifier, EmptyIdentifier } from './identifiers';
 import { IdentifiersProvider } from './identifiersProvider';
 
-import { OutlineProvider as IDEOutlineProvider, OutlineTree } from "atom-ide-base";
 import { ProviderRegistry as IDEProviderRegistry } from "atom-ide-base/commons-atom/ProviderRegistry";
 
 export const outlineProviderRegistry = new IDEProviderRegistry();
@@ -13,7 +10,6 @@ export class OutlineProvider extends IdentifiersProvider {
     /** @override */
     async generateIdentifiers() {
         const provider = outlineProviderRegistry.getProviderForEditor( this._textEditor );
-        console.log( 'provider', provider );
         
         this._topScopeIdentifier.removeAllChildren();
         
@@ -32,7 +28,8 @@ export class OutlineProvider extends IdentifiersProvider {
         
         console.debug(
             'OutlineProvider finished',
-            this._topScopeIdentifier
+            this._topScopeIdentifier,
+            this._outline ?? null
         );
         
         this._emitter.emit('did-generate-identifiers', { provider: this, identifiers: this._topScopeIdentifier });
@@ -145,8 +142,6 @@ export class OutlineProvider extends IdentifiersProvider {
         if( !this._outline ) {
             return;
         }
-        
-        console.log( 'outline', this._outline );
         
         if( this._outline.outlineTrees.length > 1 ) {
             console.warn( 'More outlineTrees than 1 - since we didn\'t encounter such case, it would be great to share the file with us...' );
