@@ -80,7 +80,6 @@ class DropdownNavigationBarPackage {
     }
     
     consumeIdentifiersProvider( provider ) {
-        console.log('consumeIdentifiersProvider', provider);
         identifiersProviderRegistry.addProvider( provider );
     }
 }
