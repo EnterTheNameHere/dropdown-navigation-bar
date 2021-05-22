@@ -8,7 +8,7 @@ export class IdentifiersProviderRegistry {
     _existingProviderInstances = new Map();
     _subscriptions = new CompositeDisposable();
     
-    getProviderForTextEditor( textEditor ) {
+    async getProviderForTextEditor( textEditor, runGenerateIdentifiersForNewProvider = true ) {
         if( !textEditor ) {
             return null;
         }

@@ -9,7 +9,7 @@ export const outlineProviderRegistry = new IDEProviderRegistry();
 export class OutlineProvider extends IdentifiersProvider {
     /** @override */
     async generateIdentifiers() {
-        const provider = outlineProviderRegistry.getProviderForEditor( this._textEditor );
+        const provider = await outlineProviderRegistry.getProviderForEditor( this._textEditor );
         
         this._topScopeIdentifier.removeAllChildren();
         

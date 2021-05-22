@@ -210,14 +210,14 @@ export class DisplayIdentifiersOnDropdownBoxes {
      *
      * @emits {will-update-dropdown-boxes}
      */
-    updateDropdownBoxes() {
+    async updateDropdownBoxes() {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
         
         const navigationBar = this._behaviorManager.getNavigationBar();
         const view = this._behaviorManager.getNavigationBarView();
         const editor = this._behaviorManager.getActiveTextEditor();
-        const provider = this._behaviorManager.getProviderForActiveTextEditor();
+        const provider = await this._behaviorManager.getProviderForActiveTextEditor();
         
         let parentIdentifiers = new Array();
         let childrenIdentifiers = new Array();

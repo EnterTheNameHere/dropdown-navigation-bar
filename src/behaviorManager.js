@@ -146,7 +146,7 @@ export class BehaviorManager {
         );
         
         this._subscriptions.add(
-            this._navigationBar.onDidChangeActiveTextEditor(( changeActiveTextEditorEvent ) => {
+            this._navigationBar.onDidChangeActiveTextEditor( async ( changeActiveTextEditorEvent ) => {
                 const textEditor = changeActiveTextEditorEvent.textEditor;
                 
                 if( this._subscriptionToOnDidChangeSelectedIdentifier ) {
@@ -160,7 +160,7 @@ export class BehaviorManager {
                 }
                 
                 if( textEditor ) {
-                    const provider = this.getProviderForActiveTextEditor();
+                    const provider = await this.getProviderForActiveTextEditor();
                     
                     if( provider ) {
                         this._subscriptionToOnDidGenerateIdentifiers =
@@ -195,7 +195,7 @@ export class BehaviorManager {
      *
      * @return {IdentifiersProvider|null} IdentifiersProvider for currently active TextEditor or null.
      */
-    getProviderForActiveTextEditor() {
+    async getProviderForActiveTextEditor() {
         return this._navigationBar.getProviderForTextEditor( this.getActiveTextEditor() );
     }
     

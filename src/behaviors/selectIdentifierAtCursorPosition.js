@@ -250,12 +250,12 @@ export class SelectIdentifierAtCursorPosition {
      *
      * @param {Point} [position] Position in atom's TextEditor; Cursor's position if not set.
      */
-    selectIdentifierAtPosition( position ) {
+    async selectIdentifierAtPosition( position ) {
         if( this._disposed ) return;
         if( !this._behaviorActive ) return;
         
         if( this._currentActiveTextEditor ) {
-            const provider = this._behaviorManager.getProviderForActiveTextEditor();
+            const provider = await this._behaviorManager.getProviderForActiveTextEditor();
             // Without IdentifiersProvider no Identifiers will be available...
             if( !provider ) return;
             

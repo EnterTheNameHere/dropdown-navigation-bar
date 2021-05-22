@@ -221,12 +221,12 @@ export class NavigationBar {
      * @private
      * Implementation
      */
-    activateWithoutEvent() {
+    async activateWithoutEvent() {
         if( this._disposed ) return;
         this._active = true;
         
         this._activeTextEditor = atom.workspace.getActiveTextEditor();
-        this._providerForActiveTextEditor = this.getProviderForTextEditor( this._activeTextEditor );
+        this._providerForActiveTextEditor = await this.getProviderForTextEditor( this._activeTextEditor );
         this._selectedIdentifier = null;
         this.registerObserveActiveTextEditor();
         this.registerOnDidChangeSelected();
@@ -338,7 +338,7 @@ export class NavigationBar {
      *
      * @private
      */
-    setActiveTextEditor( textEditor ) {
+    async setActiveTextEditor( textEditor ) {
         if( this._disposed ) return;
         if( !this._active ) return;
         
@@ -353,7 +353,7 @@ export class NavigationBar {
         else if( this._activeTextEditor !== textEditor ) {
             // New TextEditor is active
             this._activeTextEditor = textEditor;
-            this._providerForActiveTextEditor = this.getProviderForTextEditor( textEditor );
+            this._providerForActiveTextEditor = await this.getProviderForTextEditor( textEditor );
             this._selectedIdentifier = this._providerForActiveTextEditor?.getIdentifierForPosition( textEditor.getCursorBufferPosition() ) ?? null;
         } else {
             // Same TextEditor instance is active...
@@ -494,7 +494,7 @@ export class NavigationBar {
      *
      * @throws {Error} if object is already disposed of.
      */
-    getProviderForTextEditor( textEditor ) {
+    async getProviderForTextEditor( textEditor ) {
         if( this._disposed ) throw new Error("Trying to call function of object which is already disposed of!");
         if( !this._active ) return null;
         
