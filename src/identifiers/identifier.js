@@ -88,7 +88,7 @@ export class Identifier {
     _scopeLevel = 0;
 
     /**
-     * Holds unique ID for this Identifier.
+     * Holds unique ID for this Identifier. Do not access directly, use {@link this#getID}.
      * @type {string}
      *
      * @private
@@ -135,17 +135,10 @@ export class Identifier {
      * @return {string}
      */
     getID() {
-        if( !this._id ) {
-            this._id = '';
-            let child = this;
-            let parent = this._parent;
-            while( parent ) {
-                this._id += String( parent.getChildren().indexOf( child ) );
-                child = parent;
-                parent = parent.getParent();
-            }
-            this._id = `i${this._textEditor.id}${this._id}`;
-        }
+        // TODO: deal with start position moving...
+        if( this._id ) return this._id;
+        const txtStartPosition = `{${this.getStartPosition().row}:${this.getStartPosition().column}}`;
+        this._id = `te${this._textEditor.id}|${this.getDisplayName()}|${txtStartPosition}`;
         return this._id;
     }
 
