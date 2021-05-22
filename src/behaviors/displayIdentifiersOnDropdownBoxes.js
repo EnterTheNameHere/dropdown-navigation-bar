@@ -330,19 +330,29 @@ export class DisplayIdentifiersOnDropdownBoxes {
                 const positions = ` <${start?`${start.row}:${start.column}`:'x:x'}-${end?`${end.row}:${end.column}`:'x:x'}>`;
                 
                 const getIconSpan = () => {
-                    if( item.isKind('const') || item.isKind('constructor') ) return $.span( {class: 'icon variable'}, 'const' );
+                    if( item.isKind('const') || item.isKind('constant') ) return $.span( {class: 'icon variable'}, 'const' );
                     if( item.isKind('let') ) return $.span( {class: 'icon variable'}, 'let' );
-                    if( item.isKind('var') ) return $.span( {class: 'icon variable'}, 'var' );
+                    if( item.isKind('var') || item.isKind('variable') ) return $.span( {class: 'icon variable'}, 'var' );
                     if( item.isKind('class') ) return $.span( {class: 'icon class'}, 'class' );
+                    if( item.isKind('enum') ) return $.span( {class: 'icon enum'}, 'enum' );
+                    if( item.isKind('interface') ) return $.span( {class: 'icon interface'}, 'inter' );
                     if( item.isKind('function') ) return $.span( {class: 'icon function'}, 'func' );
                     if( item.isKind('constructor') ) return $.span( {class: 'icon constructor'}, 'func' );
+                    if( item.isKind('set') ) return $.span( {class: 'icon method'}, 'set' );
+                    if( item.isKind('get') ) return $.span( {class: 'icon method'}, 'get' );
                     if( item.isKind('method') ) return $.span( {class: 'icon method'}, 'func' );
                     if( item.isKind('property') ) return $.span( {class: 'icon property'}, 'prop' );
+                    if( item.isKind('field') ) return $.span( {class: 'icon field'}, 'field' );
+                    if( item.isKind('string') ) return $.span( {class: 'icon string'}, 'str' );
+                    if( item.isKind('number') ) return $.span( {class: 'icon number'}, 'num' );
+                    if( item.isKind('boolean') ) return $.span( {class: 'icon boolean'}, 'bool' );
+                    if( item.isKind('array') ) return $.span( {class: 'icon array'}, 'arr' );
                     return $.span( {class: 'icon'}, '' );
                 };
                 
                 const getAdditionalKindsSpan = () => {
                     return item.getKind().map( (kind) => {
+                        if( kind === 'static' ) return $.span( {class: 'keyword static'}, 'static' );
                         if( kind === 'async' ) return $.span( {class: 'keyword async'}, 'async' );
                         if( kind === 'generator' ) return $.span( {class: 'keyword generator'}, 'generator' );
                         if( kind === 'export' ) return $.span( {class: 'keyword export'}, 'export' );

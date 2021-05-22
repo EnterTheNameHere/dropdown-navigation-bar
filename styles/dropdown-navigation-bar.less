@@ -70,6 +70,11 @@
                 background-color: red;
                 color: @syntax-text-color;
             }
+            
+            &.static {
+                background-color: @syntax-color-keyword;
+                color: @syntax-text-color;
+            }
         }
         
         &:empty:before {
@@ -80,9 +85,12 @@
     .debug {
         margin-left: 5px;
     }
-
+    
+    .make-type-icon( unknown, @syntax-color-attribute );
     .make-type-icon( attribute, @syntax-color-attribute );
     .make-type-icon( class, @syntax-color-class );
+    .make-type-icon( enum, @syntax-color-class );
+    .make-type-icon( interface, @syntax-color-class );
     .make-type-icon( constant, @syntax-color-constant );
     .make-type-icon( function, @syntax-color-function );
     .make-type-icon( constructor, @syntax-color-method );
@@ -91,6 +99,11 @@
     .make-type-icon( module, @syntax-color-import );
     .make-type-icon( package, @syntax-color-import );
     .make-type-icon( property, @syntax-color-property );
+    .make-type-icon( field, @syntax-color-property );
+    .make-type-icon( string, @syntax-color-property );
+    .make-type-icon( number, @syntax-color-property );
+    .make-type-icon( boolean, @syntax-color-property );
+    .make-type-icon( array, @syntax-color-property );
     .make-type-icon( require, @syntax-color-import );
     .make-type-icon( import, @syntax-color-import );
     .make-type-icon( variable, @syntax-color-variable );
@@ -143,7 +156,7 @@
 }
 
 .navigation-bar-settings-button {
-    margin: 0 5px; 
+    margin: 0 5px;
 }
 
 .navigation-bar-settings {
