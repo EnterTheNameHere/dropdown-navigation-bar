@@ -147,11 +147,6 @@ export class OutlineProvider extends IdentifiersProvider {
             return;
         }
         
-        if( this._outline.outlineTrees.length > 1 ) {
-            console.warn( 'More outlineTrees than 1 - since we didn\'t encounter such case, it would be great to share the file with us...' );
-            console.warn( this._outline );
-        }
-        
         for( const tree of this._outline.outlineTrees ) {
             this.processTreeNode( tree, this._topScopeIdentifier );
         }
