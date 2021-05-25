@@ -1,7 +1,7 @@
 {
     "name": "dropdown-navigation-bar",
     "main": "./lib/main",
-    "version": "0.1.0",
+    "version": "0.1.0-alpha",
     "description": "Adds navigation bar empowered with two brand new dropdown boxes capable of displaying class names, property names or really any name you have! Well, if someone have done the work to give the names to the navigation bar... Javascript included!",
     "keywords": [
         "ui",
