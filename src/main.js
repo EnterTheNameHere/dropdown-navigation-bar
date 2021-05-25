@@ -81,6 +81,7 @@ class DropdownNavigationBarPackage {
     
     consumeIdentifiersProvider( provider ) {
         identifiersProviderRegistry.addProvider( provider );
+        this.navigationBar.update();
     }
 }
 
