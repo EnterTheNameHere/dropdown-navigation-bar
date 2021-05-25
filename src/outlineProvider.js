@@ -48,7 +48,17 @@ export class OutlineProvider extends IdentifiersProvider {
             ...identifier.getChildren().filter( (ident) => {
                 if( ident.isKind('class')
                     || ident.isKind('enum')
-                    || ident.isKind('interface') ) {
+                    || ident.isKind('interface')
+                    || ident.isKind('tt-keyword')
+                    || ident.isKind('tt-class-name')
+                    || ident.isKind('tt-constructor')
+                    || ident.isKind('tt-method')
+                    || ident.isKind('tt-param')
+                    || ident.isKind('tt-string')
+                    || ident.isKind('tt-whitespace')
+                    || ident.isKind('tt-plain')
+                    || ident.isKind('tt-type')
+                ) {
                     return true;
                 }
                 return false;
@@ -92,6 +102,7 @@ export class OutlineProvider extends IdentifiersProvider {
                     || ident.isKind('class')
                     || ident.isKind('enum')
                     || ident.isKind('interface')
+                    || ident.isKind('param')
                     || ident.isKind('unimplemented')
                     || ident.isKind('unknown')
                 ) {
@@ -106,6 +117,30 @@ export class OutlineProvider extends IdentifiersProvider {
      * @override
      */
     getIdentifierForPosition( position ) {
+        let bestIdentifier = this._topScopeIdentifier;
+        const selectBestIdentifier = (identifier) => {
+            // Check all children identifiers.
+            // Some identifiers might be "inner" even while they are not set as children.
+            // Thus we need to check all children and not return the first one being between start/end position.
+            if( identifier.hasChildren() ) {
+                for( const child of identifier.getChildren() ) {
+                    selectBestIdentifier( child );
+                }
+            } else {
+                const startPosition = identifier.getStartPosition();
+                const endPosition = identifier.getEndPosition();
+                
+                if( startPosition && position.isGreaterThanOrEqual( startPosition ) ) {
+                    if( endPosition && position.isLessThanOrEqual( endPosition ) ) {
+                        bestIdentifier = identifier;
+                    }
+                }
+            }
+        };
+        
+        selectBestIdentifier( this._topScopeIdentifier );
+        return bestIdentifier;
+        
         const searchInChildren = (parent) => {
             if( parent.isKind('function')
                 || parent.isKind('method')
@@ -163,7 +198,38 @@ export class OutlineProvider extends IdentifiersProvider {
             return;
         }
         
-        // TODO: implement TokenizedText
+        /*
+         * Must have `plainText` or the `tokenizedText` property. If both are present, `tokenizedText` is preferred.
+         *
+         * export type TokenizedText = TextToken[]
+         *
+         * export interface TextToken {
+         *    kind: TokenKind
+         *    value: string
+         * }
+         *
+         * export type TokenKind =
+         *    | "keyword"
+         *    | "class-name"
+         *    | "constructor"
+         *    | "method"
+         *    | "param"
+         *    | "string"
+         *    | "whitespace"
+         *    | "plain"
+         *    | "type"
+         *
+         * We add tt- as a prefix.
+         */
+        if( node.tokenizedText ) {
+            for( const textToken of node.tokenizedText ) {
+                const newIdentifier = this.addNewIdentifier( currentIdentifier );
+                this.setPositionsFromNode( node, newIdentifier );
+                newIdentifier.setName( textToken.value );
+                newIdentifier.addKind( `tt-${textToken.kind}` );
+            }
+            return;
+        }
         // TODO: implement icon
         
         // If kind is not set, use unknown so it's still displayed as Identifier in case it has children...
